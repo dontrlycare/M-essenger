@@ -2,8 +2,8 @@
 // Fixed bugs, better sounds, voice messages, improved design
 
 const CONFIG = {
-    API_URL: 'http://localhost:3001',
-    WS_URL: 'ws://localhost:3001',
+    API_URL: 'https://m-essenger.onrender.com',
+    WS_URL: 'wss://m-essenger.onrender.com',
     GIPHY_API_KEY: 'dc6zaTOxFJmzC'
 };
 
@@ -673,11 +673,10 @@ function handleWebSocketMessage(data) {
             break;
         case 'call_ended':
         case 'call_rejected':
-            endCall();
+            handleCallError('Звонок отклонен', true);
             break;
         case 'call_error':
-            alert(data.error);
-            endCall();
+            handleCallError(data.error);
             break;
     }
 }
@@ -1123,6 +1122,9 @@ const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 async function startCall(isVideo) {
     if (!state.currentConversation || state.isInCall) return;
 
+    // Allow calling offline users - check done on server/peer level, not client
+    // if (state.currentConversation.other_status !== 'online') ... removed restriction
+
     try {
         state.localStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -1151,11 +1153,18 @@ async function startCall(isVideo) {
             isVideo
         }));
 
-        elements.callStatus.textContent = 'Вызов...';
+        elements.callStatus.textContent = 'Звоним...';
+
+        // Timeout for no answer (30 seconds)
+        setTimeout(() => {
+            if (state.isInCall && elements.callStatus.textContent === 'Звоним...') {
+                handleCallError('Нет ответа');
+            }
+        }, 30000);
+
     } catch (error) {
         console.error('Start call error:', error);
-        alert('Не удалось начать звонок');
-        endCall();
+        handleCallError('Ошибка соединения');
     }
 }
 
@@ -1367,6 +1376,36 @@ function endCall() {
     elements.videoToggleBtn.classList.remove('active');
 }
 
+elements.muteBtn.classList.remove('active');
+elements.muteBtn.textContent = '🎤';
+elements.videoToggleBtn.classList.remove('active');
+}
+
+function handleCallError(message, isEnd = false) {
+    if (isEnd) {
+        // Show error quickly then close
+        const statusEl = elements.callStatus;
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.style.color = '#ef4444'; // Red color
+        }
+        setTimeout(() => endCall(), 2000);
+    } else {
+        // Show error state in call UI
+        elements.callOverlay.classList.remove('hidden', 'voice-call', 'video-call');
+        elements.callOverlay.classList.add('voice-call'); // Default to voice style for error
+
+        elements.callAvatar.textContent = '!';
+        elements.callAvatar.style.background = 'var(--danger)';
+        elements.callName.textContent = 'Ошибка';
+        elements.callStatus.textContent = message;
+        elements.callStatus.style.color = '#ef4444';
+
+        // Show only end call button
+        elements.callControls.innerHTML = `<button class="call-btn end-call" onclick="endCall()">Закрыть</button>`;
+    }
+}
+
 // ==================== UTILITIES ====================
 function debounce(func, wait) {
     let timeout;
@@ -1556,16 +1595,20 @@ async function createChannelOrGroup() {
             body: JSON.stringify({ name, description, ownerId: state.user.id })
         });
 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
         if (data.success) {
             closeCreateModal();
             switchTab(type === 'channel' ? 'channels' : 'groups');
         } else {
-            alert('Ошибка создания');
+            alert('Ошибка создания: ' + (data.error || 'Неизвестная ошибка'));
         }
     } catch (error) {
         console.error('Create error:', error);
-        alert('Ошибка соединения');
+        alert('Ошибка соединения. Проверьте интернет или попробуйте позже.');
     }
 }
 

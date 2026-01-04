@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
+// Fix for "Failed to Fetch" / SSL errors due to incorrect system time
+app.commandLine.appendSwitch('ignore-certificate-errors');
+
 let mainWindow;
 
 function createWindow() {

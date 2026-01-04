@@ -2,6 +2,7 @@
     "name": "m-essenger-desktop",
     "version": "1.0.0",
     "description": "M-essenger Desktop Application",
+    "author": "M-essenger",
     "main": "main.js",
     "scripts": {
         "start": "electron .",
@@ -19,8 +20,7 @@
             "target": [
                 "nsis",
                 "portable"
-            ],
-            "icon": "icon.ico"
+            ]
         },
         "nsis": {
             "oneClick": false,

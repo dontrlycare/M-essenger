@@ -4,7 +4,8 @@
     "description": "M-essenger - Modern Messenger Application",
     "main": "index.html",
     "scripts": {
-        "build": "echo Building for production..."
+        "copy-assets": "rm -rf www && mkdir www && cp index.html www/ && cp -r desktop www/",
+        "build": "npm run copy-assets"
     },
     "devDependencies": {
         "@capacitor/android": "^5.7.8",

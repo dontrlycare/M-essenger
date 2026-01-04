@@ -252,13 +252,48 @@ app.post('/api/channels/:channelId/messages', async (req, res) => {
         const { senderId, content, type } = req.body;
         const isAdmin = await dbHelpers.isChannelAdmin(req.params.channelId, senderId);
         if (!isAdmin) {
-            return res.status(403).json({ error: 'Only admins can post in channels' });
+            return res.status(403).json({ error: 'Только администраторы могут писать в канале' });
         }
         const message = await dbHelpers.createChannelMessage(req.params.channelId, senderId, content, type);
         res.json({ success: true, message });
     } catch (error) {
         console.error('Post channel message error:', error);
         res.status(500).json({ error: 'Failed to post message' });
+    }
+});
+
+// Join/Subscribe to channel
+app.post('/api/channels/:channelId/join', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        await dbHelpers.joinChannel(req.params.channelId, userId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Join channel error:', error);
+        res.status(500).json({ error: 'Failed to join channel' });
+    }
+});
+
+// Leave/Unsubscribe from channel
+app.post('/api/channels/:channelId/leave', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        await dbHelpers.leaveChannel(req.params.channelId, userId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Leave channel error:', error);
+        res.status(500).json({ error: 'Failed to leave channel' });
+    }
+});
+
+// Track message views
+app.post('/api/channels/messages/:messageId/view', async (req, res) => {
+    try {
+        await dbHelpers.incrementMessageViews(req.params.messageId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Track view error:', error);
+        res.status(500).json({ error: 'Failed to track view' });
     }
 });
 

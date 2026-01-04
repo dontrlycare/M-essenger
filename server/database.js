@@ -118,7 +118,7 @@ const initDb = async () => {
         );
       `);
 
-      // Channel messages
+      // Channel messages with view tracking
       await client.query(`
         CREATE TABLE IF NOT EXISTS channel_messages (
           id TEXT PRIMARY KEY,
@@ -126,9 +126,15 @@ const initDb = async () => {
           sender_id TEXT NOT NULL REFERENCES users(id),
           content TEXT NOT NULL,
           type TEXT DEFAULT 'text',
+          views INTEGER DEFAULT 0,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Add views column if not exists (for existing databases)
+      await client.query(`
+        ALTER TABLE channel_messages ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0;
+      `).catch(() => { });
 
       // Group messages
       await client.query(`
@@ -414,9 +420,17 @@ const dbHelpers = {
     return { success: true };
   },
 
+  leaveChannel: async (channelId, userId) => {
+    await pool.query(
+      'DELETE FROM channel_members WHERE channel_id = $1 AND user_id = $2 AND role = $3',
+      [channelId, userId, 'member']
+    );
+    return { success: true };
+  },
+
   getChannelMessages: async (channelId, limit = 50) => {
     const res = await pool.query(`
-      SELECT cm.*, u.username as sender_username
+      SELECT cm.*, u.username as sender_username, cm.views
       FROM channel_messages cm
       JOIN users u ON cm.sender_id = u.id
       WHERE cm.channel_id = $1
@@ -430,16 +444,31 @@ const dbHelpers = {
     const id = uuidv4();
     const createdAt = new Date().toISOString();
     await pool.query(
-      'INSERT INTO channel_messages (id, channel_id, sender_id, content, type, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, channelId, senderId, content, type, createdAt]
+      'INSERT INTO channel_messages (id, channel_id, sender_id, content, type, views, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [id, channelId, senderId, content, type, 0, createdAt]
     );
-    return { id, channelId, senderId, content, type, createdAt };
+    return { id, channelId, senderId, content, type, views: 0, createdAt };
+  },
+
+  incrementMessageViews: async (messageId) => {
+    await pool.query(
+      'UPDATE channel_messages SET views = views + 1 WHERE id = $1',
+      [messageId]
+    );
   },
 
   isChannelAdmin: async (channelId, userId) => {
     const res = await pool.query(
       'SELECT role FROM channel_members WHERE channel_id = $1 AND user_id = $2 AND role IN ($3, $4)',
       [channelId, userId, 'admin', 'owner']
+    );
+    return !!res.rows[0];
+  },
+
+  isChannelMember: async (channelId, userId) => {
+    const res = await pool.query(
+      'SELECT 1 FROM channel_members WHERE channel_id = $1 AND user_id = $2',
+      [channelId, userId]
     );
     return !!res.rows[0];
   },

@@ -283,23 +283,8 @@ let voiceRecordingTimer = null;
 
 // ==================== INITIALIZATION ====================
 function init() {
-    const savedUser = localStorage.getItem('m-essenger-user');
-    const savedSettings = localStorage.getItem('m-essenger-settings');
-
-    if (savedSettings) {
-        state.settings = { ...state.settings, ...JSON.parse(savedSettings) };
-        audioManager.enabled.messages = state.settings.soundMessages;
-        audioManager.enabled.calls = state.settings.soundCalls;
-        updateSettingsUI();
-    }
-
-    if (savedUser) {
-        state.user = JSON.parse(savedUser);
-        showApp();
-        // Check if username needs to be changed
-        checkUsernameValid();
-    }
-
+    // No localStorage - app starts fresh every time
+    // User must login each session (cloud-only architecture)
     setupEventListeners();
 }
 
@@ -345,7 +330,6 @@ async function saveRequiredUsername() {
         const data = await response.json();
         if (data.success) {
             state.user = { ...state.user, ...data.user };
-            localStorage.setItem('m-essenger-user', JSON.stringify(state.user));
             updateUserDisplay();
             document.getElementById('username-required-modal').classList.add('hidden');
         } else {
@@ -440,7 +424,6 @@ async function handleAuth(e) {
         if (!response.ok) throw new Error(data.error || 'Ошибка');
 
         state.user = data.user;
-        localStorage.setItem('m-essenger-user', JSON.stringify(data.user));
         showApp();
     } catch (error) {
         showError(error.message);
@@ -453,14 +436,30 @@ function showError(message) {
 }
 
 function logout() {
+    // Complete state reset - no data persists
     state.user = null;
-    localStorage.removeItem('m-essenger-user');
+    state.conversations = [];
+    state.currentConversation = null;
+    state.currentChannel = null;
+    state.currentGroup = null;
+    state.messages = [];
     state.ws?.close();
+    state.ws = null;
+    state.peerConnection = null;
+    state.localStream = null;
+    state.isInCall = false;
+    state.isMuted = false;
+    state.isVideoEnabled = true;
+    state.incomingCallData = null;
+
+    // Reset UI
     elements.loginScreen.classList.remove('hidden');
     elements.appScreen.classList.add('hidden');
     elements.emailInput.value = '';
     elements.passwordInput.value = '';
     elements.usernameInput.value = '';
+    elements.chatList.innerHTML = '';
+    elements.messagesContainer.innerHTML = '';
 }
 
 // ==================== PROFILE ====================
@@ -505,7 +504,6 @@ async function saveProfile() {
         const data = await response.json();
         if (data.success) {
             state.user = { ...state.user, ...data.user };
-            localStorage.setItem('m-essenger-user', JSON.stringify(state.user));
             updateUserDisplay();
             closeProfileModal();
         } else {
@@ -588,7 +586,7 @@ function toggleSetting(setting) {
         audioManager.enabled.calls = state.settings.soundCalls;
     }
     updateSettingsUI();
-    localStorage.setItem('m-essenger-settings', JSON.stringify(state.settings));
+    // Settings are session-only, not persisted to localStorage
 }
 
 async function loadMediaDevices() {
@@ -621,7 +619,7 @@ function saveSettings() {
     state.settings.microphoneId = elements.microphoneSelect.value;
     state.settings.speakerId = elements.speakerSelect.value;
     state.settings.cameraId = elements.cameraSelect.value;
-    localStorage.setItem('m-essenger-settings', JSON.stringify(state.settings));
+    // Settings are session-only, not persisted to localStorage
     closeSettingsModal();
 }
 

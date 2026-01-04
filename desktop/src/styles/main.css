@@ -1,24 +1,48 @@
-/* M-essenger - Dark Theme Styles */
+/* M-essenger - Modern Dark Theme (Telegram/Discord inspired) */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-primary: #0d0d0d;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #252525;
-  --bg-hover: #2d2d2d;
+  /* Primary Colors */
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #171717;
+  --bg-tertiary: #212121;
+  --bg-hover: #2a2a2a;
   --bg-active: #333333;
+
+  /* Text Colors */
   --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-muted: #666666;
-  --accent: #6c5ce7;
-  --accent-hover: #7c6cf7;
-  --accent-light: rgba(108, 92, 231, 0.2);
-  --success: #00d26a;
-  --danger: #ff4757;
-  --warning: #ffa502;
-  --border: #2a2a2a;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --gradient-accent: linear-gradient(135deg, #6c5ce7, #a55eea);
-  --gradient-dark: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+  --text-secondary: #b0b0b0;
+  --text-muted: #6b6b6b;
+
+  /* Accent Colors */
+  --accent: #7c3aed;
+  --accent-hover: #8b5cf6;
+  --accent-light: rgba(124, 58, 237, 0.15);
+  --accent-glow: rgba(124, 58, 237, 0.4);
+
+  /* Status Colors */
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+
+  /* Borders & Shadows */
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Gradients */
+  --gradient-accent: linear-gradient(135deg, #7c3aed, #a855f7);
+  --gradient-success: linear-gradient(135deg, #22c55e, #16a34a);
+  --gradient-danger: linear-gradient(135deg, #ef4444, #dc2626);
+  --gradient-dark: linear-gradient(180deg, #171717, #0f0f0f);
+
+  /* Animation */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
 }
 
 * {
@@ -28,11 +52,13 @@
 }
 
 body {
-  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar */
@@ -179,51 +205,86 @@ body {
 .btn {
   padding: 14px 24px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple effect container */
+.btn::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.2) 10%, transparent 10%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.8s;
+}
+
+.btn:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
 }
 
 .btn-primary {
   background: var(--gradient-accent);
   color: white;
+  box-shadow: 0 4px 14px var(--accent-glow);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 6px 20px var(--accent-glow);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-secondary {
   background: var(--bg-tertiary);
   color: var(--text-primary);
+  border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
   background: var(--bg-hover);
+  border-color: var(--text-muted);
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
 }
 
 .btn-success {
-  background: var(--success);
+  background: var(--gradient-success);
   color: white;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
 }
 
 .btn-danger {
-  background: var(--danger);
+  background: var(--gradient-danger);
   color: white;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
 
 .login-toggle {
@@ -233,9 +294,11 @@ body {
   cursor: pointer;
   font-size: 14px;
   margin-top: 16px;
+  transition: color var(--transition-fast);
 }
 
 .login-toggle:hover {
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
@@ -375,16 +438,51 @@ body {
   padding: 12px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast);
   position: relative;
+  animation: fadeSlideIn 0.3s ease backwards;
+}
+
+.chat-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.chat-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.chat-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.chat-item:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.chat-item:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .chat-item:hover {
   background: var(--bg-hover);
+  transform: scale(1.01);
 }
 
 .chat-item.active {
   background: var(--accent-light);
+  border-left: 3px solid var(--accent);
 }
 
 .chat-content {
@@ -415,6 +513,19 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
 }
 
 .unread-badge {
@@ -582,10 +693,14 @@ body {
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
     opacity: 0.5;
   }
+
   30% {
     transform: translateY(-4px);
     opacity: 1;
@@ -807,9 +922,12 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 20px rgba(108, 92, 231, 0);
   }
@@ -901,6 +1019,7 @@ body {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;

@@ -178,11 +178,18 @@ app.get('/api/messages/:conversationId', async (req, res) => {
 app.post('/api/channels', async (req, res) => {
     try {
         const { name, description, ownerId } = req.body;
+
+        // Validate user exists before creating channel
+        const user = await dbHelpers.getUserById(ownerId);
+        if (!user) {
+            return res.status(401).json({ error: 'Пользователь не найден. Пожалуйста, перезайдите в аккаунт.' });
+        }
+
         const channel = await dbHelpers.createChannel(name, description, ownerId);
         res.json({ success: true, channel });
     } catch (error) {
         console.error('Create channel error:', error);
-        res.status(500).json({ error: 'Failed to create channel' });
+        res.status(500).json({ error: 'Ошибка создания канала' });
     }
 });
 
@@ -229,11 +236,18 @@ app.post('/api/channels/:channelId/messages', async (req, res) => {
 app.post('/api/groups', async (req, res) => {
     try {
         const { name, description, ownerId } = req.body;
+
+        // Validate user exists before creating group
+        const user = await dbHelpers.getUserById(ownerId);
+        if (!user) {
+            return res.status(401).json({ error: 'Пользователь не найден. Пожалуйста, перезайдите в аккаунт.' });
+        }
+
         const group = await dbHelpers.createGroup(name, description, ownerId);
         res.json({ success: true, group });
     } catch (error) {
         console.error('Create group error:', error);
-        res.status(500).json({ error: 'Failed to create group' });
+        res.status(500).json({ error: 'Ошибка создания группы' });
     }
 });
 

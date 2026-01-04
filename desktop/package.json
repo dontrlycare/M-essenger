@@ -1,0 +1,37 @@
+{
+    "name": "m-essenger-desktop",
+    "version": "1.0.0",
+    "description": "M-essenger Desktop Application",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron .",
+        "build": "electron-builder --win",
+        "build:win": "electron-builder --win portable"
+    },
+    "build": {
+        "appId": "com.messenger.app",
+        "productName": "M-essenger",
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": [
+                "nsis",
+                "portable"
+            ],
+            "icon": "icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        }
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0"
+    },
+    "devDependencies": {
+        "electron": "^23.3.13",
+        "electron-builder": "^24.9.1"
+    }
+}

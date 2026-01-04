@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-essenger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-hover: #22222f;
+            --bg-active: #2a2a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent: #8b5cf6;
+            --accent-hover: #9d6fff;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --gradient: linear-gradient(135deg, #8b5cf6, #ec4899);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 5px var(--accent-glow);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--accent-glow);
+            }
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .animate-slide {
+            animation: slideUp 0.3s ease;
+        }
+
+        /* Login */
+        .login-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg-primary) 70%);
+            padding: 20px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 15px;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input,
+        .form-textarea {
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        .login-toggle {
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .login-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .user-profile:hover {
+            background: var(--bg-hover);
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .avatar.small {
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .settings-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Search */
+        .search-container {
+            padding: 12px 16px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--bg-tertiary);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 16px;
+            right: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-top: 4px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Chat List */
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            animation: slideLeft 0.3s ease backwards;
+        }
+
+        .chat-item:hover {
+            background: var(--bg-hover);
+            transform: translateX(3px);
+        }
+
+        .chat-item.active {
+            background: var(--accent-glow);
+        }
+
+        .chat-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .chat-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .chat-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Chat Window */
+        .chat-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-header-text h3 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .chat-header-text span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 42px;
+            height: 42px;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            animation: slideUp 0.2s ease;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-bubble {
+            background: var(--gradient);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: var(--bg-tertiary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 4px;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        .message-gif {
+            max-width: 280px;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .message-gif img {
+            width: 100%;
+            display: block;
+        }
+
+        .message-voice {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            min-width: 220px;
+            max-width: 320px;
+        }
+
+        .voice-play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .voice-play-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .voice-play-btn.playing {
+            background: var(--danger);
+        }
+
+        .voice-waveform-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .voice-waveform {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 28px;
+        }
+
+        .voice-bar {
+            width: 3px;
+            background: var(--text-muted);
+            border-radius: 2px;
+            transition: background 0.1s;
+        }
+
+        .voice-bar.active {
+            background: var(--accent);
+        }
+
+        .voice-progress-container {
+            position: relative;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .voice-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .voice-time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .voice-current-time {
+            color: var(--accent);
+        }
+
+        .voice-duration {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* Message Input */
+        .message-input-container {
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            position: relative;
+        }
+
+        .message-input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 24px;
+            padding: 8px 8px 8px 18px;
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            padding: 8px 0;
+            resize: none;
+            max-height: 100px;
+            line-height: 1.4;
+        }
+
+        .message-input:focus {
+            outline: none;
+        }
+
+        .message-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .input-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .input-btn:hover {
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .send-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            background: var(--gradient);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Voice Recording UI */
+        .voice-recording-ui {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            margin-bottom: 10px;
+        }
+
+        .voice-recording-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 1s infinite;
+        }
+
+        .voice-recording-time {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .voice-recording-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-cancel-btn,
+        .voice-send-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .voice-cancel-btn {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+
+        .voice-send-btn {
+            background: var(--gradient);
+            color: white;
+        }
+
+        /* GIF Picker */
+        .gif-picker {
+            position: absolute;
+            bottom: 100%;
+            left: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 8px;
+            box-shadow: var(--shadow);
+            max-height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gif-picker-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .gif-search {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .gif-search:focus {
+            outline: none;
+        }
+
+        .gif-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            padding: 8px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .gif-item {
+            aspect-ratio: 1;
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .gif-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gif-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Call Overlay */
+        .call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .call-video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .local-video {
+            position: absolute;
+            bottom: 120px;
+            right: 20px;
+            width: 180px;
+            height: 135px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--border);
+        }
+
+        .local-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .call-info {
+            text-align: center;
+        }
+
+        .call-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 700;
+            color: white;
+            margin: 0 auto 24px;
+            animation: glow 2s infinite;
+        }
+
+        .call-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .call-status {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Voice Call Specific Styles */
+        .call-overlay.voice-call {
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, var(--bg-primary) 100%);
+        }
+
+        .call-overlay.voice-call .call-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .call-overlay.voice-call .call-avatar {
+            width: 150px;
+            height: 150px;
+            font-size: 60px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 60px rgba(139, 92, 246, 0.5);
+        }
+
+        .call-overlay.voice-call .call-name {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .call-overlay.voice-call .call-timer {
+            font-size: 18px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        /* Voice call sound waves animation */
+        .voice-waves {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 40px;
+            margin-top: 20px;
+        }
+
+        .voice-waves.hidden {
+            display: none;
+        }
+
+        .voice-wave-bar {
+            width: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: voiceWave 1s ease-in-out infinite;
+        }
+
+        .voice-wave-bar:nth-child(1) {
+            animation-delay: 0s;
+            height: 15px;
+        }
+
+        .voice-wave-bar:nth-child(2) {
+            animation-delay: 0.1s;
+            height: 25px;
+        }
+
+        .voice-wave-bar:nth-child(3) {
+            animation-delay: 0.2s;
+            height: 35px;
+        }
+
+        .voice-wave-bar:nth-child(4) {
+            animation-delay: 0.3s;
+            height: 25px;
+        }
+
+        .voice-wave-bar:nth-child(5) {
+            animation-delay: 0.4s;
+            height: 15px;
+        }
+
+        .voice-wave-bar:nth-child(6) {
+            animation-delay: 0.5s;
+            height: 30px;
+        }
+
+        .voice-wave-bar:nth-child(7) {
+            animation-delay: 0.6s;
+            height: 20px;
+        }
+
+        @keyframes voiceWave {
+
+            0%,
+            100% {
+                transform: scaleY(0.5);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        /* Video Call Specific Styles */
+        .call-overlay.video-call {
+            background: #000;
+        }
+
+        .call-overlay.video-call .call-video-container {
+            display: flex;
+        }
+
+        .call-overlay.video-call .call-info {
+            display: none;
+        }
+
+        .call-overlay.video-call.connecting .call-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .call-overlay.video-call.connecting .call-video-container {
+            opacity: 0.3;
+        }
+
+        .call-status .call-btn {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.2s;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .call-btn.mute {
+            background: var(--bg-tertiary);
+            color: white;
+        }
+
+        .call-btn.mute.active {
+            background: var(--danger);
+        }
+
+        .call-btn.video-toggle {
+            background: var(--bg-tertiary);
+            color: white;
+        }
+
+        .call-btn.end-call {
+            background: var(--danger);
+            color: white;
+        }
+
+        .call-btn.accept-call {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Incoming Call */
+        .incoming-call {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            z-index: 2000;
+            min-width: 280px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .incoming-call-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .incoming-call-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .incoming-call-info span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .incoming-call-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+        }
+
+        .modal-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .profile-avatar-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 30px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            font-weight: 700;
+            color: white;
+            margin: 0 auto 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .profile-avatar-large:hover {
+            transform: scale(1.05);
+        }
+
+        .settings-select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .settings-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(22px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        /* Sidebar Tabs for Chats/Channels/Groups */
+        .sidebar-tabs {
+            display: flex;
+            padding: 8px 12px;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .sidebar-tab.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        /* Create Button */
+        .create-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .create-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        /* Channel/Group Item */
+        .channel-item,
+        .group-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .channel-item:hover,
+        .group-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .channel-item.active,
+        .group-item.active {
+            background: var(--accent-glow);
+        }
+
+        .channel-icon,
+        .group-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .channel-icon {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+
+        .group-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .member-count {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login -->
+    <div id="login-screen" class="login-container">
+        <div class="login-logo animate-slide">M</div>
+        <div class="login-subtitle animate-fade">Добро пожаловать в M-essenger</div>
+
+        <form id="login-form" class="login-form animate-fade">
+            <div id="error-container" class="error-message hidden"></div>
+
+            <div id="username-field" class="form-group hidden">
+                <label class="form-label">Username</label>
+                <input type="text" id="username" class="form-input" placeholder="@username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="example@mail.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" id="password" class="form-input" placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <span id="auth-btn-text">Войти</span>
+            </button>
+
+            <button type="button" id="toggle-mode" class="login-toggle">
+                Нет аккаунта? Зарегистрироваться
+            </button>
+        </form>
+    </div>
+
+    <!-- App -->
+    <div id="app-screen" class="app-container hidden">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile" onclick="openProfileModal()">
+                    <div class="avatar" id="current-user-avatar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="current-user-name">Username</div>
+                        <div class="user-status">В сети</div>
+                    </div>
+                </div>
+                <button class="settings-btn" onclick="openSettingsModal()">⚙️</button>
+            </div>
+
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" class="search-input" placeholder="Поиск @username...">
+                <div id="search-results" class="search-results hidden"></div>
+            </div>
+
+            <!-- Sidebar Tabs -->
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" id="tab-chats" onclick="switchTab('chats')">💬 Чаты</button>
+                <button class="sidebar-tab" id="tab-channels" onclick="switchTab('channels')">📢 Каналы</button>
+                <button class="sidebar-tab" id="tab-groups" onclick="switchTab('groups')">👥 Группы</button>
+            </div>
+
+            <div class="chat-list" id="chat-list"></div>
+            <div class="chat-list hidden" id="channel-list"></div>
+            <div class="chat-list hidden" id="group-list"></div>
+
+            <button class="create-btn" onclick="openCreateModal()" title="Создать">+</button>
+        </div>
+
+        <div class="main-content">
+            <div class="empty-state" id="empty-state">
+                <div class="empty-state-icon">💬</div>
+                <h3>Выберите чат</h3>
+                <p>Найдите пользователя по @username</p>
+            </div>
+
+            <div id="chat-window" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="chat-header-bar">
+                    <div class="chat-header-info">
+                        <div class="avatar" id="chat-avatar">U</div>
+                        <div class="chat-header-text">
+                            <h3 id="chat-username">Username</h3>
+                            <span id="chat-status">Не в сети</span>
+                        </div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button class="action-btn" id="voice-call-btn">📞</button>
+                        <button class="action-btn" id="video-call-btn">📹</button>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messages-container"></div>
+
+                <div id="typing-indicator" class="typing-indicator hidden">
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                    <span>печатает...</span>
+                </div>
+
+                <div class="message-input-container">
+                    <div id="gif-picker" class="gif-picker hidden">
+                        <div class="gif-picker-header">
+                            <input type="text" id="gif-search" class="gif-search" placeholder="Поиск GIF...">
+                        </div>
+                        <div class="gif-grid" id="gif-grid"></div>
+                    </div>
+
+                    <div id="voice-recording-ui" class="voice-recording-ui hidden">
+                        <div class="voice-recording-indicator">
+                            <div class="recording-dot"></div>
+                            <span id="voice-recording-time">0:00</span>
+                        </div>
+                        <div class="voice-recording-actions">
+                            <button class="voice-cancel-btn" id="voice-cancel-btn">Отмена</button>
+                            <button class="voice-send-btn" id="voice-send-btn">Отправить</button>
+                        </div>
+                    </div>
+
+                    <div class="message-input-wrapper">
+                        <textarea id="message-input" class="message-input" placeholder="Сообщение..."
+                            rows="1"></textarea>
+                        <div class="input-actions">
+                            <button class="input-btn" id="gif-btn">🎬</button>
+                            <button class="input-btn" id="voice-btn">🎤</button>
+                        </div>
+                        <button class="send-btn" id="send-btn" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Overlay -->
+    <div id="call-overlay" class="call-overlay hidden">
+        <div id="call-video-container" class="call-video-container hidden">
+            <video id="remote-video" class="remote-video" autoplay playsinline></video>
+            <div class="local-video"><video id="local-video" autoplay playsinline muted></video></div>
+        </div>
+        <div id="call-connecting" class="call-info">
+            <div class="call-avatar" id="call-avatar">U</div>
+            <div class="call-name" id="call-name">Username</div>
+            <div class="call-status" id="call-status">Вызов...</div>
+            <div class="call-timer hidden" id="call-timer">0:00</div>
+            <div class="voice-waves hidden" id="voice-waves">
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+            </div>
+        </div>
+        <div class="call-controls">
+            <button class="call-btn mute" id="mute-btn">🎤</button>
+            <button class="call-btn video-toggle hidden" id="video-toggle-btn">📷</button>
+            <button class="call-btn end-call" id="end-call-btn">📵</button>
+        </div>
+    </div>
+
+    <!-- Incoming Call -->
+    <div id="incoming-call" class="incoming-call hidden">
+        <div class="incoming-call-header">
+            <div class="avatar" id="incoming-avatar">U</div>
+            <div class="incoming-call-info">
+                <h4 id="incoming-name">Username</h4>
+                <span id="incoming-type">Входящий звонок</span>
+            </div>
+        </div>
+        <div class="incoming-call-actions">
+            <button class="call-btn end-call" id="reject-call-btn">📵</button>
+            <button class="call-btn accept-call" id="accept-call-btn">📞</button>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Профиль</h2>
+                <button class="modal-close" onclick="closeProfileModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-avatar-large" id="profile-avatar-large">U</div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Username</div>
+                    <input type="text" id="profile-username" class="form-input" placeholder="@username"
+                        pattern="[a-zA-Z0-9_]+">
+                    <div id="username-error" class="error-message hidden" style="margin-top: 8px; font-size: 12px;">
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Имя</div>
+                    <input type="text" id="profile-display-name" class="form-input" placeholder="Ваше имя">
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">О себе</div>
+                    <textarea id="profile-bio" class="form-textarea" placeholder="Расскажите о себе..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveProfile()" style="width: 100%;">Сохранить</button>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <button class="logout-btn" onclick="logout()" style="margin-bottom: 12px;">🚪 Выйти из
+                        аккаунта</button>
+                    <button class="logout-btn" onclick="deleteAccount()"
+                        style="border-color: #dc2626; color: #dc2626;">🗑️ Удалить аккаунт навсегда</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Username Required Modal -->
+    <div id="username-required-modal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>⚠️ Требуется изменить username</h2>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+                    Ваш текущий username содержит недопустимые символы. Username может содержать только:
+                </p>
+                <ul style="color: var(--text-muted); margin-bottom: 20px; padding-left: 20px;">
+                    <li>Латинские буквы (a-z, A-Z)</li>
+                    <li>Цифры (0-9)</li>
+                    <li>Нижнее подчёркивание (_)</li>
+                </ul>
+                <div class="form-group">
+                    <label class="form-label">Новый Username</label>
+                    <input type="text" id="new-username-required" class="form-input" placeholder="your_username"
+                        pattern="[a-zA-Z0-9_]+">
+                    <div id="new-username-error" class="error-message hidden" style="margin-top: 8px; font-size: 12px;">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="saveRequiredUsername()"
+                    style="width: 100%; margin-top: 16px;">Сохранить и продолжить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-account-modal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 style="color: var(--danger);">⚠️ Удаление аккаунта</h2>
+                <button class="modal-close" onclick="closeDeleteAccountModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+                    Вы уверены, что хотите <strong style="color: var(--danger);">безвозвратно удалить</strong> свой
+                    аккаунт?
+                </p>
+                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 13px;">
+                    Все ваши данные, сообщения и чаты будут удалены без возможности восстановления.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Введите "УДАЛИТЬ" для подтверждения</label>
+                    <input type="text" id="delete-confirm-input" class="form-input" placeholder="УДАЛИТЬ">
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn" onclick="closeDeleteAccountModal()"
+                        style="flex: 1; background: var(--bg-tertiary); color: var(--text-primary);">Отмена</button>
+                    <button class="btn" onclick="confirmDeleteAccount()"
+                        style="flex: 1; background: var(--danger); color: white;">Удалить навсегда</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Настройки</h2>
+                <button class="modal-close" onclick="closeSettingsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <div class="modal-section-title">Звуки</div>
+                    <div class="toggle-container">
+                        <span class="toggle-label">Звук сообщений</span>
+                        <div class="toggle-switch active" id="sound-messages-toggle"
+                            onclick="toggleSetting('soundMessages')"></div>
+                    </div>
+                    <div class="toggle-container">
+                        <span class="toggle-label">Звук звонков</span>
+                        <div class="toggle-switch active" id="sound-calls-toggle" onclick="toggleSetting('soundCalls')">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Микрофон</div>
+                    <select id="microphone-select" class="settings-select">
+                        <option>Загрузка...</option>
+                    </select>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Динамики</div>
+                    <select id="speaker-select" class="settings-select">
+                        <option>Загрузка...</option>
+                    </select>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Камера</div>
+                    <select id="camera-select" class="settings-select">
+                        <option>Загрузка...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="saveSettings()" style="width: 100%;">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Channel/Group Modal -->
+    <div id="create-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Создать</h2>
+                <button class="modal-close" onclick="closeCreateModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <div class="modal-section-title">Тип</div>
+                    <select id="create-type" class="settings-select">
+                        <option value="channel">📢 Канал (только админы пишут)</option>
+                        <option value="group">👥 Группа (все пишут)</option>
+                    </select>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Название</div>
+                    <input type="text" id="create-name" class="form-input" placeholder="Название канала или группы">
+                </div>
+                <div class="modal-section">
+                    <div class="modal-section-title">Описание</div>
+                    <textarea id="create-description" class="form-textarea"
+                        placeholder="Описание (необязательно)"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createChannelOrGroup()" style="width: 100%;">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="desktop/src/app.js"></script>
+</body>
+
+</html>

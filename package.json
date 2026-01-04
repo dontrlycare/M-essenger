@@ -1,0 +1,14 @@
+{
+    "name": "m-essenger",
+    "version": "1.0.0",
+    "description": "M-essenger - Modern Messenger Application",
+    "main": "index.html",
+    "scripts": {
+        "build": "echo Building for production..."
+    },
+    "devDependencies": {
+        "@capacitor/android": "^5.7.8",
+        "@capacitor/cli": "^5.7.8",
+        "@capacitor/core": "^5.7.8"
+    }
+}

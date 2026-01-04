@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' ws://localhost:3001 http://localhost:3001 https://api.giphy.com;">
+  <title>M-essenger</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <div class="title-bar-title">M-ESSENGER</div>
+    <div class="title-bar-controls">
+      <button class="title-bar-btn minimize" onclick="window.electronAPI?.minimizeWindow()">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect width="10" height="1" x="1" y="6" fill="currentColor"/></svg>
+      </button>
+      <button class="title-bar-btn maximize" onclick="window.electronAPI?.maximizeWindow()">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="currentColor"/></svg>
+      </button>
+      <button class="title-bar-btn close" onclick="window.electronAPI?.closeWindow()">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-container">
+    <div class="login-logo">M</div>
+    <div class="login-subtitle">Добро пожаловать в M-essenger</div>
+    
+    <form id="login-form" class="login-form">
+      <div id="error-container" class="error-message hidden"></div>
+      
+      <div id="username-field" class="form-group hidden">
+        <label class="form-label">Имя пользователя</label>
+        <input type="text" id="username" class="form-input" placeholder="Введите имя">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="example@mail.com">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••">
+      </div>
+      
+      <button type="submit" class="btn btn-primary">
+        <span id="auth-btn-text">Войти</span>
+      </button>
+      
+      <button type="button" id="toggle-mode" class="login-toggle">
+        Нет аккаунта? Зарегистрироваться
+      </button>
+    </form>
+  </div>
+
+  <!-- Main App -->
+  <div id="app-screen" class="app-container hidden">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="user-profile" id="current-user-profile">
+          <div class="avatar" id="current-user-avatar">U</div>
+          <div class="user-info">
+            <div class="user-name" id="current-user-name">Username</div>
+            <div class="user-status online">В сети</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="search-container position-relative">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Поиск пользователей...">
+        </div>
+        <div id="search-results" class="search-results hidden"></div>
+      </div>
+      
+      <div class="chat-list" id="chat-list">
+        <!-- Chats will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <h3>Выберите чат</h3>
+        <p>Выберите диалог слева или найдите пользователя для начала общения</p>
+      </div>
+      
+      <!-- Chat Window (hidden by default) -->
+      <div id="chat-window" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="chat-header-bar">
+          <div class="chat-header-info">
+            <div class="avatar" id="chat-avatar">U</div>
+            <div class="chat-header-text">
+              <h3 id="chat-username">Username</h3>
+              <span id="chat-status">Был(а) недавно</span>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button class="action-btn" id="voice-call-btn" title="Голосовой звонок">📞</button>
+            <button class="action-btn" id="video-call-btn" title="Видеозвонок">📹</button>
+          </div>
+        </div>
+        
+        <div class="messages-container" id="messages-container">
+          <!-- Messages will be loaded here -->
+        </div>
+        
+        <div id="typing-indicator" class="typing-indicator hidden">
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span>печатает...</span>
+        </div>
+        
+        <div class="message-input-container position-relative">
+          <div id="gif-picker" class="gif-picker hidden">
+            <div class="gif-picker-header">
+              <input type="text" id="gif-search" class="gif-search" placeholder="Поиск GIF...">
+            </div>
+            <div class="gif-grid" id="gif-grid">
+              <!-- GIFs will be loaded here -->
+            </div>
+          </div>
+          
+          <div class="message-input-wrapper">
+            <textarea id="message-input" class="message-input" placeholder="Напишите сообщение..." rows="1"></textarea>
+            <div class="input-actions">
+              <button class="input-btn" id="gif-btn" title="Отправить GIF">🎬</button>
+            </div>
+            <button class="send-btn" id="send-btn" disabled title="Отправить">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Overlay -->
+  <div id="call-overlay" class="call-overlay hidden">
+    <div id="call-video-container" class="call-video-container hidden">
+      <video id="remote-video" class="remote-video" autoplay playsinline></video>
+      <div class="local-video">
+        <video id="local-video" autoplay playsinline muted></video>
+      </div>
+    </div>
+    
+    <div id="call-connecting" class="call-info">
+      <div class="call-avatar" id="call-avatar">U</div>
+      <div class="call-name" id="call-name">Username</div>
+      <div class="call-status" id="call-status">Вызов...</div>
+    </div>
+    
+    <div class="call-controls">
+      <button class="call-btn mute" id="mute-btn" title="Отключить микрофон">🎤</button>
+      <button class="call-btn video-toggle" id="video-toggle-btn" title="Вкл/Выкл камеру">📷</button>
+      <button class="call-btn end-call" id="end-call-btn" title="Завершить звонок">📵</button>
+    </div>
+  </div>
+
+  <!-- Incoming Call Popup -->
+  <div id="incoming-call" class="incoming-call hidden">
+    <div class="incoming-call-header">
+      <div class="avatar" id="incoming-avatar">U</div>
+      <div class="incoming-call-info">
+        <h4 id="incoming-name">Username</h4>
+        <span id="incoming-type">Входящий звонок</span>
+      </div>
+    </div>
+    <div class="incoming-call-actions">
+      <button class="call-btn end-call" id="reject-call-btn" title="Отклонить">📵</button>
+      <button class="call-btn accept-call" id="accept-call-btn" title="Принять">📞</button>
+    </div>
+  </div>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

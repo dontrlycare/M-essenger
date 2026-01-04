@@ -1,3 +1,11 @@
+const dns = require('dns');
+// Force IPv4 to fix Render connection issues (ENETUNREACH)
+try {
+    dns.setDefaultResultOrder('ipv4first');
+} catch (e) {
+    console.warn('Could not set default result order:', e);
+}
+
 const express = require('express');
 const cors = require('cors');
 const http = require('http');

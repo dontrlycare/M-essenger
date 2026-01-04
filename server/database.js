@@ -7,7 +7,11 @@ require('dotenv').config();
 // For deployment, DATABASE_URL will be provided by the host (Render/Heroku/etc)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 20, // Connection pool size
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  family: 4 // Force IPv4 to fix ENETUNREACH on Render
 });
 
 // Initialize database tables

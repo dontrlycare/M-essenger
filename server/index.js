@@ -1,10 +1,19 @@
 const dns = require('dns');
-// Force IPv4 to fix Render connection issues (ENETUNREACH)
-try {
-    dns.setDefaultResultOrder('ipv4first');
-} catch (e) {
-    console.warn('Could not set default result order:', e);
-}
+
+// CRITICAL FIX: Force IPv4 for all connections to avoid ENETUNREACH on Render
+// This overrides the system DNS lookup to always request IPv4 addresses
+const originalLookup = dns.lookup;
+dns.lookup = (hostname, options, callback) => {
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    } else if (!options) {
+        options = {};
+    }
+    options.family = 4; // Force IPv4
+    options.hints = (options.hints || 0) | dns.ADDRCONFIG | dns.V4MAPPED;
+    return originalLookup(hostname, options, callback);
+};
 
 const express = require('express');
 const cors = require('cors');

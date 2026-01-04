@@ -71,12 +71,18 @@ const initDb = async () => {
         CREATE TABLE IF NOT EXISTS channels (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
+          username TEXT UNIQUE,
           description TEXT DEFAULT NULL,
           avatar TEXT DEFAULT NULL,
           owner_id TEXT NOT NULL REFERENCES users(id),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Add username column if not exists (for existing databases)
+      await client.query(`
+        ALTER TABLE channels ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+      `).catch(() => { });
 
       // Groups table
       await client.query(`
@@ -340,21 +346,21 @@ const dbHelpers = {
   },
 
   // ===================== CHANNEL OPERATIONS =====================
-  createChannel: async (name, description, ownerId) => {
+  createChannel: async (name, description, ownerId, username = null) => {
     const id = uuidv4();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(
-        'INSERT INTO channels (id, name, description, owner_id) VALUES ($1, $2, $3, $4)',
-        [id, name, description, ownerId]
+        'INSERT INTO channels (id, name, username, description, owner_id) VALUES ($1, $2, $3, $4, $5)',
+        [id, name, username, description, ownerId]
       );
       await client.query(
         'INSERT INTO channel_members (channel_id, user_id, role) VALUES ($1, $2, $3)',
         [id, ownerId, 'admin']
       );
       await client.query('COMMIT');
-      return { id, name, description, ownerId };
+      return { id, name, username, description, ownerId };
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
@@ -374,6 +380,29 @@ const dbHelpers = {
       WHERE cm.user_id = $1
       ORDER BY last_message_time DESC NULLS LAST
     `, [userId]);
+    return res.rows;
+  },
+
+  getChannelById: async (channelId) => {
+    const res = await pool.query(`
+      SELECT c.*, 
+        (SELECT COUNT(*) FROM channel_members WHERE channel_id = c.id) as member_count,
+        u.username as owner_username
+      FROM channels c
+      JOIN users u ON c.owner_id = u.id
+      WHERE c.id = $1
+    `, [channelId]);
+    return res.rows[0];
+  },
+
+  searchChannels: async (query) => {
+    const res = await pool.query(`
+      SELECT c.id, c.name, c.username, c.description, c.avatar,
+        (SELECT COUNT(*) FROM channel_members WHERE channel_id = c.id) as member_count
+      FROM channels c
+      WHERE c.username ILIKE $1 OR c.name ILIKE $2
+      LIMIT 20
+    `, [`%${query}%`, `%${query}%`]);
     return res.rows;
   },
 
@@ -451,6 +480,18 @@ const dbHelpers = {
       ORDER BY last_message_time DESC NULLS LAST
     `, [userId]);
     return res.rows;
+  },
+
+  getGroupById: async (groupId) => {
+    const res = await pool.query(`
+      SELECT g.*, 
+        (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count,
+        u.username as owner_username
+      FROM groups_table g
+      JOIN users u ON g.owner_id = u.id
+      WHERE g.id = $1
+    `, [groupId]);
+    return res.rows[0];
   },
 
   joinGroup: async (groupId, userId) => {

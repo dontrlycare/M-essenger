@@ -177,7 +177,7 @@ app.get('/api/messages/:conversationId', async (req, res) => {
 // Create channel
 app.post('/api/channels', async (req, res) => {
     try {
-        const { name, description, ownerId } = req.body;
+        const { name, description, ownerId, username } = req.body;
 
         // Validate user exists before creating channel
         const user = await dbHelpers.getUserById(ownerId);
@@ -185,11 +185,15 @@ app.post('/api/channels', async (req, res) => {
             return res.status(401).json({ error: 'Пользователь не найден. Пожалуйста, перезайдите в аккаунт.' });
         }
 
-        const channel = await dbHelpers.createChannel(name, description, ownerId);
+        const channel = await dbHelpers.createChannel(name, description, ownerId, username);
         res.json({ success: true, channel });
     } catch (error) {
         console.error('Create channel error:', error);
-        res.status(500).json({ error: 'Ошибка создания канала' });
+        if (error.code === '23505') {
+            res.status(400).json({ error: 'Этот username уже занят' });
+        } else {
+            res.status(500).json({ error: 'Ошибка создания канала' });
+        }
     }
 });
 
@@ -201,6 +205,33 @@ app.get('/api/channels/user/:userId', async (req, res) => {
     } catch (error) {
         console.error('Get channels error:', error);
         res.status(500).json({ error: 'Failed to get channels' });
+    }
+});
+
+// Search channels
+app.get('/api/channels/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json([]);
+        const channels = await dbHelpers.searchChannels(q);
+        res.json(channels);
+    } catch (error) {
+        console.error('Search channels error:', error);
+        res.status(500).json({ error: 'Failed to search channels' });
+    }
+});
+
+// Get channel by ID
+app.get('/api/channels/:channelId', async (req, res) => {
+    try {
+        const channel = await dbHelpers.getChannelById(req.params.channelId);
+        if (!channel) {
+            return res.status(404).json({ error: 'Channel not found' });
+        }
+        res.json(channel);
+    } catch (error) {
+        console.error('Get channel error:', error);
+        res.status(500).json({ error: 'Failed to get channel' });
     }
 });
 
@@ -259,6 +290,20 @@ app.get('/api/groups/user/:userId', async (req, res) => {
     } catch (error) {
         console.error('Get groups error:', error);
         res.status(500).json({ error: 'Failed to get groups' });
+    }
+});
+
+// Get group by ID
+app.get('/api/groups/:groupId', async (req, res) => {
+    try {
+        const group = await dbHelpers.getGroupById(req.params.groupId);
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+        res.json(group);
+    } catch (error) {
+        console.error('Get group error:', error);
+        res.status(500).json({ error: 'Failed to get group' });
     }
 });
 

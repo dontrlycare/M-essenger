@@ -192,6 +192,8 @@ const state = {
     user: null,
     conversations: [],
     currentConversation: null,
+    currentChannel: null,
+    currentGroup: null,
     messages: [],
     ws: null,
     peerConnection: null,
@@ -897,19 +899,76 @@ function handleMessageInput() {
 
 function sendMessage(content = null, type = 'text') {
     const messageContent = content || elements.messageInput.value.trim();
-    if (!messageContent || !state.currentConversation || !state.ws) return;
+    if (!messageContent) return;
 
-    state.ws.send(JSON.stringify({
-        type: 'message',
-        conversationId: state.currentConversation.id,
-        senderId: state.user.id,
-        content: messageContent,
-        messageType: type
-    }));
+    // Check what context we're in
+    if (state.currentChannel) {
+        // Send to channel via HTTP (only admins can post)
+        sendChannelMessage(messageContent, type);
+    } else if (state.currentGroup) {
+        // Send to group via WebSocket
+        sendGroupMessage(messageContent, type);
+    } else if (state.currentConversation && state.ws) {
+        // Private message via WebSocket
+        state.ws.send(JSON.stringify({
+            type: 'message',
+            conversationId: state.currentConversation.id,
+            senderId: state.user.id,
+            content: messageContent,
+            messageType: type
+        }));
+    } else {
+        return;
+    }
 
     elements.messageInput.value = '';
     elements.messageInput.style.height = 'auto';
     elements.sendBtn.disabled = true;
+}
+
+async function sendChannelMessage(content, type = 'text') {
+    if (!state.currentChannel) return;
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${state.currentChannel.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: state.user.id,
+                content: content,
+                type: type
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Reload messages
+            await loadChannelMessages(state.currentChannel.id);
+        } else {
+            alert(data.error || 'Только администраторы могут писать в канале');
+        }
+    } catch (error) {
+        console.error('Send channel message error:', error);
+    }
+}
+
+async function sendGroupMessage(content, type = 'text') {
+    if (!state.currentGroup) return;
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${state.currentGroup.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: state.user.id,
+                content: content,
+                type: type
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            await loadGroupMessages(state.currentGroup.id);
+        }
+    } catch (error) {
+        console.error('Send group message error:', error);
+    }
 }
 
 function handleTypingIndicator(data) {
@@ -1554,14 +1613,98 @@ function renderGroups(groups) {
     `).join('');
 }
 
-function selectChannel(channelId) {
-    // TODO: Implement channel view
-    console.log('Selected channel:', channelId);
+async function selectChannel(channelId) {
+    try {
+        // Fetch channel details
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${channelId}`);
+        const channel = await response.json();
+        if (!channel || channel.error) {
+            console.error('Channel not found');
+            return;
+        }
+
+        // Store current channel
+        state.currentChannel = channel;
+        state.currentConversation = null; // Clear private chat
+        state.currentGroup = null;
+
+        // Update UI
+        elements.emptyState.classList.add('hidden');
+        elements.chatWindow.classList.remove('hidden');
+        elements.chatAvatar.textContent = '📢';
+        elements.chatAvatar.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
+        elements.chatUsername.textContent = channel.name;
+        elements.chatStatus.textContent = `${channel.member_count || 1} участников`;
+
+        // Hide call buttons for channels
+        document.querySelectorAll('.call-btn').forEach(btn => btn.style.display = 'none');
+
+        // Load channel messages
+        await loadChannelMessages(channelId);
+
+        // Update active state
+        document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[onclick="selectChannel('${channelId}')"]`)?.classList.add('active');
+    } catch (error) {
+        console.error('Select channel error:', error);
+    }
 }
 
-function selectGroup(groupId) {
-    // TODO: Implement group view
-    console.log('Selected group:', groupId);
+async function loadChannelMessages(channelId) {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${channelId}/messages`);
+        state.messages = await response.json();
+        renderMessages();
+    } catch (error) {
+        console.error('Load channel messages error:', error);
+    }
+}
+
+async function selectGroup(groupId) {
+    try {
+        // Fetch group details
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${groupId}`);
+        const group = await response.json();
+        if (!group || group.error) {
+            console.error('Group not found');
+            return;
+        }
+
+        // Store current group
+        state.currentGroup = group;
+        state.currentConversation = null;
+        state.currentChannel = null;
+
+        // Update UI
+        elements.emptyState.classList.add('hidden');
+        elements.chatWindow.classList.remove('hidden');
+        elements.chatAvatar.textContent = '👥';
+        elements.chatAvatar.style.background = 'linear-gradient(135deg, #10b981, #3b82f6)';
+        elements.chatUsername.textContent = group.name;
+        elements.chatStatus.textContent = `${group.member_count || 1} участников`;
+
+        // Show call buttons for groups (group calls)
+        document.querySelectorAll('.call-btn').forEach(btn => btn.style.display = '');
+
+        // Load group messages
+        await loadGroupMessages(groupId);
+
+        // Update active state
+        document.querySelectorAll('.group-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[onclick="selectGroup('${groupId}')"]`)?.classList.add('active');
+    } catch (error) {
+        console.error('Select group error:', error);
+    }
+}
+
+async function loadGroupMessages(groupId) {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${groupId}/messages`);
+        state.messages = await response.json();
+        renderMessages();
+    } catch (error) {
+        console.error('Load group messages error:', error);
+    }
 }
 
 function openCreateModal() {

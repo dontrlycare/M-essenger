@@ -1376,10 +1376,7 @@ function endCall() {
     elements.videoToggleBtn.classList.remove('active');
 }
 
-elements.muteBtn.classList.remove('active');
-elements.muteBtn.textContent = '🎤';
-elements.videoToggleBtn.classList.remove('active');
-}
+
 
 function handleCallError(message, isEnd = false) {
     if (isEnd) {

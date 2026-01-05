@@ -8,7 +8,19 @@ echo ==========================================
 set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
 echo [INFO] JAVA_HOME set to: "%JAVA_HOME%"
 
-:: 2. Create local.properties with correct SDK path (using forward slashes to avoid escaping issues)
+:: 2. Prepare Assets (Windows Compatible)
+echo [INFO] Preparing www directory...
+if exist www rmdir /s /q www
+mkdir www
+copy index.html www\
+copy mobile.css www\
+copy icon.png www\
+xcopy /E /I /Y desktop www\desktop
+
+echo [INFO] Syncing Capacitor...
+call npx cap sync android
+
+:: 2.1 Create local.properties
 echo [INFO] Updating local.properties...
 echo sdk.dir=C:/Users/анальный потрошитель/AppData/Local/Android/Sdk > android\local.properties
 

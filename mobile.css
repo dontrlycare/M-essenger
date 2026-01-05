@@ -1,0 +1,183 @@
+/* Mobile Specific Styles - Telegram Style */
+
+:root {
+    --mobile-bg: #0f0f0f;
+    --mobile-header: #1c1c1d;
+    --mobile-accent: #8774e1;
+    /* Telegram Blue/Purple */
+    --mobile-text: #ffffff;
+    --mobile-text-secondary: #aaaaaa;
+    --mobile-message-in: #212121;
+    --mobile-message-out: #8774e1;
+}
+
+/* Force Mobile Layout on small screens or when loaded in app */
+@media (max-width: 768px) {
+    body {
+        background-color: var(--mobile-bg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Hide Desktop Elements */
+    .desktop-only,
+    .title-bar,
+    .sidebar-header,
+    .search-container {
+        display: none !important;
+    }
+
+    /* Full Screen Containers */
+    .app-container,
+    .sidebar,
+    .main-content {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        background: var(--mobile-bg);
+    }
+
+    /* Chat List (Telegram Style) */
+    .sidebar {
+        z-index: 10;
+        padding-bottom: 60px;
+        /* Space for bottom nav */
+        display: flex !important;
+        /* Force show sidebar initially */
+    }
+
+    .chat-list {
+        padding: 0;
+    }
+
+    .chat-item {
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 0;
+        margin: 0;
+        background: transparent;
+    }
+
+    .chat-item:hover,
+    .chat-item:active {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .chat-img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 12px;
+    }
+
+    .chat-info {
+        flex: 1;
+    }
+
+    .chat-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .chat-preview {
+        color: var(--mobile-text-secondary);
+        font-size: 14px;
+    }
+
+    /* Main Content (Chat View) */
+    .main-content {
+        z-index: 20;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        background-image: url('https://w.wallhaven.cc/full/vg/wallhaven-vg88p5.jpg');
+        /* Dark pattern background */
+        background-size: cover;
+        background-position: center;
+    }
+
+    .main-content.active {
+        transform: translateX(0);
+    }
+
+    /* Chat Header */
+    .chat-header-bar {
+        background-color: var(--mobile-header);
+        padding: 10px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        height: 56px;
+    }
+
+    .back-btn {
+        display: block !important;
+        margin-right: 16px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        padding: 0 8px;
+    }
+
+    /* Messages */
+    .messages-container {
+        padding: 16px;
+        gap: 8px;
+    }
+
+    .message-bubble {
+        padding: 8px 12px;
+        border-radius: 16px;
+        font-size: 15px;
+        line-height: 1.3;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        max-width: 80%;
+    }
+
+    .message.received .message-bubble {
+        background-color: var(--mobile-message-in);
+        border-bottom-left-radius: 4px;
+    }
+
+    .message.sent .message-bubble {
+        background-color: var(--mobile-message-out);
+        border-bottom-right-radius: 4px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 56px;
+        background-color: var(--mobile-header);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 30;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-item {
+        background: none;
+        border: none;
+        color: var(--mobile-text-secondary);
+        font-size: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .nav-item.active {
+        color: var(--mobile-accent);
+    }
+
+    .nav-icon {
+        font-size: 20px;
+    }
+}

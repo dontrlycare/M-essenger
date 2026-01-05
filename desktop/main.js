@@ -21,8 +21,13 @@ function createWindow() {
         },
         icon: path.join(__dirname, 'icon.ico')
     });
+    // In production, index.html is in resources folder
+    // In development, it's in parent directory
+    const indexPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'index.html')
+        : path.join(__dirname, '..', 'index.html');
 
-    mainWindow.loadFile(path.join(__dirname, '..', 'index.html'));
+    mainWindow.loadFile(indexPath);
 
     // Open DevTools in development
     // mainWindow.webContents.openDevTools();

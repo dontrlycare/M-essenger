@@ -376,6 +376,42 @@ app.get('/api/groups/:groupId/members', async (req, res) => {
     }
 });
 
+// ===================== CALL ROUTES =====================
+// Start logging a call
+app.post('/api/calls', async (req, res) => {
+    try {
+        const { callerId, receiverId, type } = req.body;
+        const call = await dbHelpers.createCallLog(callerId, receiverId, type);
+        res.json({ success: true, call });
+    } catch (error) {
+        console.error('Create call log error:', error);
+        res.status(500).json({ error: 'Failed to create call log' });
+    }
+});
+
+// Update call log (end, reject, answer)
+app.put('/api/calls/:callId', async (req, res) => {
+    try {
+        const { status, duration } = req.body;
+        await dbHelpers.updateCallLog(req.params.callId, status, duration);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Update call log error:', error);
+        res.status(500).json({ error: 'Failed to update call log' });
+    }
+});
+
+// Get call history
+app.get('/api/calls/user/:userId', async (req, res) => {
+    try {
+        const history = await dbHelpers.getCallHistory(req.params.userId);
+        res.json(history);
+    } catch (error) {
+        console.error('Get call history error:', error);
+        res.status(500).json({ error: 'Failed to get call history' });
+    }
+});
+
 // Setup WebSocket
 setupWebSocket(server);
 

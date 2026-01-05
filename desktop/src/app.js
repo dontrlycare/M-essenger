@@ -10,6 +10,66 @@ const CONFIG = {
 // Username validation regex - only Latin letters, numbers, and underscore
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
+// ==================== TOAST & MODAL SYSTEM ====================
+function showToast(message, type = 'info', title = null) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const titles = { success: 'Успешно', error: 'Ошибка', warning: 'Внимание', info: 'Информация' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title || titles[type]}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showModal(options = {}) {
+    const { icon = '❓', title = 'Подтверждение', message = '', buttons = [] } = options;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-modal-overlay';
+    overlay.innerHTML = `
+        <div class="custom-modal">
+            <div class="custom-modal-icon">${icon}</div>
+            <div class="custom-modal-title">${title}</div>
+            <div class="custom-modal-message">${message}</div>
+            <div class="custom-modal-buttons"></div>
+        </div>
+    `;
+
+    const buttonsContainer = overlay.querySelector('.custom-modal-buttons');
+    buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.className = `custom-modal-btn ${btn.primary ? 'primary' : 'secondary'}`;
+        button.textContent = btn.text;
+        button.onclick = () => {
+            overlay.remove();
+            btn.onClick?.();
+        };
+        buttonsContainer.appendChild(button);
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// Global wrapper to replace all alerts
+window.showToast = showToast;
+window.showModal = showModal;
+
 // ==================== AUDIO SYSTEM ====================
 class AudioManager {
     constructor() {
@@ -1212,12 +1272,13 @@ async function startCall(isVideo) {
 
         elements.callStatus.textContent = 'Звоним...';
 
-        // Timeout for no answer (30 seconds)
+        // Timeout for no answer (60 seconds - increased for stability)
         setTimeout(() => {
             if (state.isInCall && elements.callStatus.textContent === 'Звоним...') {
+                showToast('Абонент не отвечает', 'warning');
                 handleCallError('Нет ответа');
             }
-        }, 30000);
+        }, 60000);
 
     } catch (error) {
         console.error('Start call error:', error);

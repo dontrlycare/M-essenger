@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M-essenger</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
     <style>
         :root {
             --bg-primary: #0a0a0f;
@@ -1529,13 +1530,207 @@
             font-size: 12px;
             color: var(--text-muted);
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 48px;
+            right: 16px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            min-width: 280px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toastSlideIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
+            backdrop-filter: blur(20px);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--accent);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* Custom Alert Modal */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .custom-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            min-width: 320px;
+            max-width: 400px;
+            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center;
+        }
+
+        @keyframes modalPop {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .custom-modal-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .custom-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .custom-modal-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .custom-modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .custom-modal-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .custom-modal-btn.primary {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .custom-modal-btn.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .custom-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Title Bar for Desktop App -->
+    <div id="title-bar"
+        style="position: fixed; top: 0; left: 0; right: 0; height: 32px; background: #0a0a0f; -webkit-app-region: drag; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; z-index: 9999; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 12px; font-weight: 600; color: #8b5cf6;">M-essenger</div>
+        <div style="-webkit-app-region: no-drag; display: flex;">
+            <button onclick="window.electronAPI?.minimize()"
+                style="width: 32px; height: 32px; border: none; background: transparent; color: #9ca3af; cursor: pointer; font-size: 14px;">─</button>
+            <button onclick="window.electronAPI?.maximize()"
+                style="width: 32px; height: 32px; border: none; background: transparent; color: #9ca3af; cursor: pointer; font-size: 14px;">□</button>
+            <button onclick="window.electronAPI?.close()"
+                style="width: 32px; height: 32px; border: none; background: transparent; color: #9ca3af; cursor: pointer; font-size: 14px;"
+                onmouseover="this.style.background='#ef4444';this.style.color='white'"
+                onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">✕</button>
+        </div>
+    </div>
+
     <!-- Login -->
-    <div id="login-screen" class="login-container">
-        <div class="login-logo animate-slide">M</div>
+    <div id="login-screen" class="login-container" style="padding-top: 32px;">
+        <img src="icon.png" class="login-logo animate-slide"
+            style="padding: 0; background: transparent; box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);"
+            alt="M-essenger">
         <div class="login-subtitle animate-fade">Добро пожаловать в M-essenger</div>
 
         <form id="login-form" class="login-form animate-fade">
@@ -1567,7 +1762,7 @@
     </div>
 
     <!-- App -->
-    <div id="app-screen" class="app-container hidden">
+    <div id="app-screen" class="app-container hidden" style="margin-top: 32px; height: calc(100vh - 32px);">
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="user-profile" onclick="openProfileModal()">
@@ -1609,6 +1804,7 @@
 
             <div id="chat-window" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="chat-header-bar">
+                    <button class="back-btn mobile-only" onclick="closeChat()">←</button>
                     <div class="chat-header-info">
                         <div class="avatar" id="chat-avatar">U</div>
                         <div class="chat-header-text">
@@ -1664,6 +1860,22 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav mobile-only">
+        <button class="nav-item active" onclick="switchTab('chats')">
+            <span class="nav-icon">💬</span>
+            <span>Чаты</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('calls')">
+            <span class="nav-icon">📞</span>
+            <span>Звонки</span>
+        </button>
+        <button class="nav-item" onclick="openSettingsModal()">
+            <span class="nav-icon">⚙️</span>
+            <span>Настройки</span>
+        </button>
     </div>
 
     <!-- Call Overlay -->
@@ -1875,7 +2087,21 @@
         </div>
     </div>
 
-    <script src="desktop/src/app.js"></script>
+    <script>
+        // Try to load app.js from different paths (packaged vs dev)
+        const script = document.createElement('script');
+        script.onerror = function () {
+            // Try alternative path if first fails
+            const altScript = document.createElement('script');
+            altScript.src = 'src/app.js';
+            altScript.onerror = function () {
+                console.error('Failed to load app.js');
+            };
+            document.body.appendChild(altScript);
+        };
+        script.src = 'desktop/src/app.js';
+        document.body.appendChild(script);
+    </script>
 </body>
 
 </html>

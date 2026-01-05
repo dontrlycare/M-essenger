@@ -148,6 +148,20 @@ const initDb = async () => {
         );
       `);
 
+      // Calls table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS calls (
+          id TEXT PRIMARY KEY,
+          caller_id TEXT NOT NULL REFERENCES users(id),
+          receiver_id TEXT NOT NULL REFERENCES users(id),
+          status TEXT DEFAULT 'missed',
+          type TEXT DEFAULT 'audio',
+          start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          end_time TIMESTAMP DEFAULT NULL,
+          duration INTEGER DEFAULT 0
+        );
+      `);
+
       console.log('Database tables initialized');
     } finally {
       client.release();
@@ -560,6 +574,41 @@ const dbHelpers = {
       JOIN users u ON gm.user_id = u.id
       WHERE gm.group_id = $1
     `, [groupId]);
+    return res.rows;
+  },
+
+  // ===================== CALL OPERATIONS =====================
+  createCallLog: async (callerId, receiverId, type = 'audio') => {
+    const id = uuidv4();
+    const startTime = new Date().toISOString();
+    await pool.query(
+      'INSERT INTO calls (id, caller_id, receiver_id, type, status, start_time) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, callerId, receiverId, type, 'missed', startTime]
+    );
+    return { id, callerId, receiverId, type, status: 'missed', startTime };
+  },
+
+  updateCallLog: async (callId, status, duration = 0) => {
+    const endTime = new Date().toISOString();
+    await pool.query(
+      'UPDATE calls SET status = $1, end_time = $2, duration = $3 WHERE id = $4',
+      [status, endTime, duration, callId]
+    );
+    return { success: true };
+  },
+
+  getCallHistory: async (userId, limit = 50) => {
+    const res = await pool.query(`
+      SELECT c.*, 
+        caller.username as caller_username, caller.avatar as caller_avatar,
+        receiver.username as receiver_username, receiver.avatar as receiver_avatar
+      FROM calls c
+      JOIN users caller ON c.caller_id = caller.id
+      JOIN users receiver ON c.receiver_id = receiver.id
+      WHERE c.caller_id = $1 OR c.receiver_id = $1
+      ORDER BY c.start_time DESC
+      LIMIT $2
+    `, [userId, limit]);
     return res.rows;
   }
 };

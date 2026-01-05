@@ -80,6 +80,35 @@ function showModal(options = {}) {
 window.showToast = showToast;
 window.showModal = showModal;
 
+// ==================== LOADING OVERLAY ====================
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+// Detect mobile platform and add class to body
+function detectPlatform() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android/i.test(userAgent)) {
+        document.body.classList.add('platform-android');
+    }
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        document.body.classList.add('platform-ios');
+    }
+    if (window.matchMedia('(max-width: 768px)').matches) {
+        document.body.classList.add('is-mobile');
+    }
+}
+
+// Make functions globally available
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+
 // ==================== AUDIO SYSTEM ====================
 class AudioManager {
     constructor() {
@@ -353,6 +382,8 @@ let voiceRecordingTimer = null;
 
 // ==================== INITIALIZATION ====================
 function init() {
+    // Detect platform for mobile-specific styling
+    detectPlatform();
     // No localStorage - app starts fresh every time
     // User must login each session (cloud-only architecture)
     setupEventListeners();
@@ -813,11 +844,14 @@ function handleWebSocketMessage(data) {
 // ==================== CONVERSATIONS ====================
 async function loadConversations() {
     try {
+        showLoading();
         const response = await fetch(`${CONFIG.API_URL}/api/conversations/${state.user.id}`);
         state.conversations = await response.json();
         renderConversations();
     } catch (error) {
         console.error('Load conversations error:', error);
+    } finally {
+        hideLoading();
     }
 }
 

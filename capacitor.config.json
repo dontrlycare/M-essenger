@@ -10,7 +10,15 @@
     },
     "ios": {
         "contentInset": "automatic",
-        "allowsLinkPreview": true,
-        "scrollEnabled": true
+        "allowsLinkPreview": false,
+        "scrollEnabled": false,
+        "limitsNavigationsToAppBoundDomains": true
+    },
+    "plugins": {
+        "SplashScreen": {
+            "launchAutoHide": true,
+            "backgroundColor": "#0d0d0d",
+            "showSpinner": false
+        }
     }
 }

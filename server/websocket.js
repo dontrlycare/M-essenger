@@ -24,6 +24,17 @@ function setupWebSocket(server) {
                         // Notify all users about online status
                         broadcastStatus(userId, 'online');
 
+                        // Send pending calls (missed calls while offline)
+                        const pendingCalls = await dbHelpers.getPendingCalls(userId);
+                        if (pendingCalls.length > 0) {
+                            ws.send(JSON.stringify({
+                                type: 'pending_calls',
+                                calls: pendingCalls
+                            }));
+                            // Clear pending calls after sending
+                            await dbHelpers.clearPendingCalls(userId);
+                        }
+
                         ws.send(JSON.stringify({ type: 'auth_success' }));
                         break;
 
@@ -89,10 +100,17 @@ function setupWebSocket(server) {
                                 isVideo: message.isVideo
                             }));
                         } else {
-                            // User offline
+                            // User offline - save pending call for notification when they come online
+                            await dbHelpers.savePendingCall(
+                                message.callerId,
+                                message.targetUserId,
+                                message.callerName,
+                                message.isVideo ? 'video' : 'audio'
+                            );
+                            // Notify caller that call is pending (user will be notified when online)
                             ws.send(JSON.stringify({
-                                type: 'call_error',
-                                error: 'User is offline'
+                                type: 'call_pending',
+                                message: 'Пользователь офлайн. Ему придёт уведомление когда он вернётся.'
                             }));
                         }
                         break;

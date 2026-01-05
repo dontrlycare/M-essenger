@@ -9,22 +9,19 @@
     <link rel="icon" type="image/png" href="icon.png">
     <style>
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-tertiary: #1a1a25;
-            --bg-hover: #22222f;
-            --bg-active: #2a2a3a;
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --accent: #8b5cf6;
-            --accent-hover: #9d6fff;
-            --accent-glow: rgba(139, 92, 246, 0.3);
-            --success: #10b981;
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #161616;
+            --bg-tertiary: #1f1f1f;
+            --bg-hover: #2a2a2a;
+            --bg-active: #333;
+            --text-primary: #fff;
+            --text-secondary: #999;
+            --text-muted: #666;
+            --accent: #7c3aed;
+            --accent-hover: #8b5cf6;
+            --success: #22c55e;
             --danger: #ef4444;
-            --border: rgba(255, 255, 255, 0.08);
-            --gradient: linear-gradient(135deg, #8b5cf6, #ec4899);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -55,38 +52,14 @@
             border-radius: 3px;
         }
 
-        /* Animations */
+        /* Minimal animations */
         @keyframes fadeIn {
             from {
-                opacity: 0;
+                opacity: 0
             }
 
             to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
+                opacity: 1
             }
         }
 
@@ -94,32 +67,17 @@
 
             0%,
             100% {
-                opacity: 1;
+                opacity: 1
             }
 
             50% {
-                opacity: 0.5;
+                opacity: 0.5
             }
         }
 
-        @keyframes glow {
-
-            0%,
-            100% {
-                box-shadow: 0 0 5px var(--accent-glow);
-            }
-
-            50% {
-                box-shadow: 0 0 20px var(--accent-glow);
-            }
-        }
-
-        .animate-fade {
-            animation: fadeIn 0.3s ease;
-        }
-
+        .animate-fade,
         .animate-slide {
-            animation: slideUp 0.3s ease;
+            animation: fadeIn 0.2s ease
         }
 
         /* Login */
@@ -129,15 +87,15 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg-primary) 70%);
+            background: var(--bg-primary);
             padding: 20px;
         }
 
         .login-logo {
             width: 80px;
             height: 80px;
-            background: var(--gradient);
-            border-radius: 24px;
+            background: var(--accent);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -145,7 +103,6 @@
             font-weight: 700;
             color: white;
             margin-bottom: 16px;
-            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
         }
 
         .login-subtitle {
@@ -191,7 +148,6 @@
         .form-textarea:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .form-input::placeholder {
@@ -218,13 +174,12 @@
         }
 
         .btn-primary {
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            background: var(--accent-hover);
         }
 
         .login-toggle {
@@ -292,8 +247,8 @@
         .avatar {
             width: 44px;
             height: 44px;
-            border-radius: 14px;
-            background: var(--gradient);
+            border-radius: 12px;
+            background: var(--accent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -415,20 +370,17 @@
             align-items: center;
             gap: 12px;
             padding: 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s;
             margin-bottom: 4px;
-            animation: slideLeft 0.3s ease backwards;
         }
 
         .chat-item:hover {
             background: var(--bg-hover);
-            transform: translateX(3px);
         }
 
         .chat-item.active {
-            background: var(--accent-glow);
+            background: var(--bg-tertiary);
         }
 
         .chat-content {
@@ -470,7 +422,6 @@
 
         .status-dot.online {
             background: var(--success);
-            box-shadow: 0 0 8px var(--success);
         }
 
         /* Sidebar Footer */
@@ -576,7 +527,6 @@
         .action-btn:hover {
             background: var(--accent);
             color: white;
-            transform: scale(1.05);
         }
 
         /* Messages */
@@ -594,7 +544,6 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            animation: slideUp 0.2s ease;
         }
 
         .message.sent {
@@ -614,7 +563,7 @@
         }
 
         .message.sent .message-bubble {
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -660,7 +609,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
             border: none;
             cursor: pointer;
@@ -669,12 +618,6 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .voice-play-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
 
         .voice-play-btn.playing {
@@ -721,10 +664,9 @@
             left: 0;
             top: 0;
             height: 100%;
-            background: var(--gradient);
+            background: var(--accent);
             border-radius: 2px;
             width: 0%;
-            transition: width 0.1s linear;
         }
 
         .voice-time-info {
@@ -830,31 +772,25 @@
 
         .input-btn:hover {
             color: var(--accent);
-            background: var(--accent-glow);
+            background: var(--bg-hover);
         }
 
         .send-btn {
             width: 38px;
             height: 38px;
             border: none;
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .send-btn:hover {
-            transform: scale(1.08);
         }
 
         .send-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
-            transform: none;
         }
 
         /* Voice Recording UI */
@@ -961,11 +897,6 @@
             cursor: pointer;
             border-radius: 8px;
             overflow: hidden;
-            transition: transform 0.2s;
-        }
-
-        .gif-item:hover {
-            transform: scale(1.05);
         }
 
         .gif-item img {
@@ -1028,7 +959,7 @@
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: var(--gradient);
+            background: var(--accent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1036,7 +967,6 @@
             font-weight: 700;
             color: white;
             margin: 0 auto 24px;
-            animation: glow 2s infinite;
         }
 
         .call-name {
@@ -1061,7 +991,7 @@
 
         /* Voice Call Specific Styles */
         .call-overlay.voice-call {
-            background: radial-gradient(ellipse at center, #1a1a2e 0%, var(--bg-primary) 100%);
+            background: var(--bg-primary);
         }
 
         .call-overlay.voice-call .call-info {
@@ -1075,7 +1005,6 @@
             height: 150px;
             font-size: 60px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 60px rgba(139, 92, 246, 0.5);
         }
 
         .call-overlay.voice-call .call-name {
@@ -1195,11 +1124,6 @@
             border-radius: 50%;
             cursor: pointer;
             font-size: 24px;
-            transition: all 0.2s;
-        }
-
-        .call-btn:hover {
-            transform: scale(1.1);
         }
 
         .call-btn.mute {
@@ -1233,12 +1157,10 @@
             right: 20px;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 20px;
-            box-shadow: var(--shadow);
             z-index: 2000;
             min-width: 280px;
-            animation: slideUp 0.3s ease;
         }
 
         .incoming-call-header {
@@ -1281,12 +1203,11 @@
 
         .modal {
             background: var(--bg-secondary);
-            border-radius: 20px;
+            border-radius: 16px;
             width: 90%;
             max-width: 420px;
             max-height: 85vh;
             overflow-y: auto;
-            animation: slideUp 0.3s ease;
             border: 1px solid var(--border);
         }
 
@@ -1335,8 +1256,8 @@
         .profile-avatar-large {
             width: 100px;
             height: 100px;
-            border-radius: 30px;
-            background: var(--gradient);
+            border-radius: 24px;
+            background: var(--accent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1345,11 +1266,6 @@
             color: white;
             margin: 0 auto 24px;
             cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .profile-avatar-large:hover {
-            transform: scale(1.05);
         }
 
         .settings-select {
@@ -1435,7 +1351,6 @@
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
-            transition: all 0.2s;
         }
 
         .sidebar-tab:hover {
@@ -1443,7 +1358,7 @@
         }
 
         .sidebar-tab.active {
-            background: var(--accent-glow);
+            background: var(--bg-tertiary);
             color: var(--accent);
         }
 
@@ -1455,21 +1370,14 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
             border: none;
             font-size: 28px;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .create-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 30px rgba(139, 92, 246, 0.5);
         }
 
         /* Channel/Group Item */
@@ -1479,9 +1387,8 @@
             align-items: center;
             gap: 12px;
             padding: 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s;
             margin-bottom: 4px;
         }
 
@@ -1492,14 +1399,14 @@
 
         .channel-item.active,
         .group-item.active {
-            background: var(--accent-glow);
+            background: var(--bg-tertiary);
         }
 
         .channel-icon,
         .group-icon {
             width: 44px;
             height: 44px;
-            border-radius: 14px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1508,11 +1415,11 @@
         }
 
         .channel-icon {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #3b82f6;
         }
 
         .group-icon {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: #10b981;
         }
 
         .item-content {
@@ -1545,15 +1452,12 @@
         .toast {
             min-width: 280px;
             padding: 14px 20px;
-            border-radius: 12px;
+            border-radius: 10px;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
             gap: 12px;
-            animation: toastSlideIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
-            backdrop-filter: blur(20px);
         }
 
         .toast.success {
@@ -1591,30 +1495,6 @@
             color: var(--text-secondary);
         }
 
-        @keyframes toastSlideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes toastFadeOut {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-
         /* Custom Alert Modal */
         .custom-modal-overlay {
             position: fixed;
@@ -1622,37 +1502,21 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: fadeIn 0.2s ease;
         }
 
         .custom-modal {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 28px;
-            min-width: 320px;
-            max-width: 400px;
-            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 16px;
+            padding: 24px;
+            min-width: 300px;
+            max-width: 380px;
             text-align: center;
-        }
-
-        @keyframes modalPop {
-            from {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
         }
 
         .custom-modal-icon {
@@ -1686,22 +1550,16 @@
             font-weight: 600;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
         }
 
         .custom-modal-btn.primary {
-            background: var(--gradient);
+            background: var(--accent);
             color: white;
         }
 
         .custom-modal-btn.secondary {
             background: var(--bg-tertiary);
             color: var(--text-primary);
-        }
-
-        .custom-modal-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
@@ -1728,9 +1586,7 @@
 
     <!-- Login -->
     <div id="login-screen" class="login-container" style="padding-top: 32px;">
-        <img src="icon.png" class="login-logo animate-slide"
-            style="padding: 0; background: transparent; box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);"
-            alt="M-essenger">
+        <img src="icon.png" class="login-logo" style="padding: 0; background: transparent;" alt="M-essenger">
         <div class="login-subtitle animate-fade">Добро пожаловать в M-essenger</div>
 
         <form id="login-form" class="login-form animate-fade">
@@ -1772,20 +1628,46 @@
                         <div class="user-status">В сети</div>
                     </div>
                 </div>
-                <button class="settings-btn" onclick="openSettingsModal()">⚙️</button>
+                <button class="settings-btn" onclick="openSettingsModal()"><svg width="20" height="20"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg></button>
             </div>
 
             <div class="search-container">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg></span>
                 <input type="text" id="search-input" class="search-input" placeholder="Поиск @username...">
                 <div id="search-results" class="search-results hidden"></div>
             </div>
 
             <!-- Sidebar Tabs -->
             <div class="sidebar-tabs">
-                <button class="sidebar-tab active" id="tab-chats" onclick="switchTab('chats')">💬 Чаты</button>
-                <button class="sidebar-tab" id="tab-channels" onclick="switchTab('channels')">📢 Каналы</button>
-                <button class="sidebar-tab" id="tab-groups" onclick="switchTab('groups')">👥 Группы</button>
+                <button class="sidebar-tab active" id="tab-chats" onclick="switchTab('chats')"><svg width="14"
+                        height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg> Чаты</button>
+                <button class="sidebar-tab" id="tab-channels" onclick="switchTab('channels')"><svg width="14"
+                        height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 11 18-5v12L3 14z" />
+                        <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+                    </svg> Каналы</button>
+                <button class="sidebar-tab" id="tab-groups" onclick="switchTab('groups')"><svg width="14" height="14"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg> Группы</button>
             </div>
 
             <div class="chat-list" id="chat-list"></div>
@@ -1797,7 +1679,11 @@
 
         <div class="main-content">
             <div class="empty-state" id="empty-state">
-                <div class="empty-state-icon">💬</div>
+                <div class="empty-state-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        style="opacity: 0.5;">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg></div>
                 <h3>Выберите чат</h3>
                 <p>Найдите пользователя по @username</p>
             </div>
@@ -1848,8 +1734,23 @@
                         <textarea id="message-input" class="message-input" placeholder="Сообщение..."
                             rows="1"></textarea>
                         <div class="input-actions">
-                            <button class="input-btn" id="gif-btn">🎬</button>
-                            <button class="input-btn" id="voice-btn">🎤</button>
+                            <button class="input-btn" id="gif-btn"><svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                    <path d="m10 8-6 6" />
+                                    <path d="m14 4-8 8" />
+                                    <path d="M12 10v8" />
+                                    <path d="M16 14v4" />
+                                    <path d="M20 18H8" />
+                                </svg></button>
+                            <button class="input-btn" id="voice-btn"><svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                    <line x1="12" x2="12" y1="19" y2="22" />
+                                </svg></button>
                         </div>
                         <button class="send-btn" id="send-btn" disabled>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -1865,7 +1766,10 @@
     <!-- Bottom Navigation (Mobile Only) -->
     <div class="bottom-nav mobile-only">
         <button class="nav-item active" onclick="switchTab('chats')">
-            <span class="nav-icon">💬</span>
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg></span>
             <span>Чаты</span>
         </button>
         <button class="nav-item" onclick="switchTab('calls')">
@@ -1873,7 +1777,12 @@
             <span>Звонки</span>
         </button>
         <button class="nav-item" onclick="openSettingsModal()">
-            <span class="nav-icon">⚙️</span>
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg></span>
             <span>Настройки</span>
         </button>
     </div>
@@ -1900,9 +1809,23 @@
             </div>
         </div>
         <div class="call-controls">
-            <button class="call-btn mute" id="mute-btn">🎤</button>
-            <button class="call-btn video-toggle hidden" id="video-toggle-btn">📷</button>
-            <button class="call-btn end-call" id="end-call-btn">📵</button>
+            <button class="call-btn mute" id="mute-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" x2="12" y1="19" y2="22" />
+                </svg></button>
+            <button class="call-btn video-toggle hidden" id="video-toggle-btn"><svg width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m22 8-6 4 6 4V8Z" />
+                    <rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
+                </svg></button>
+            <button class="call-btn end-call" id="end-call-btn"><svg width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                </svg></button>
         </div>
     </div>
 
@@ -1916,7 +1839,12 @@
             </div>
         </div>
         <div class="incoming-call-actions">
-            <button class="call-btn end-call" id="reject-call-btn">📵</button>
+            <button class="call-btn end-call" id="reject-call-btn"><svg width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                </svg></button>
             <button class="call-btn accept-call" id="accept-call-btn">📞</button>
         </div>
     </div>
@@ -1948,10 +1876,24 @@
                 <button class="btn btn-primary" onclick="saveProfile()" style="width: 100%;">Сохранить</button>
 
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
-                    <button class="logout-btn" onclick="logout()" style="margin-bottom: 12px;">🚪 Выйти из
+                    <button class="logout-btn" onclick="logout()" style="margin-bottom: 12px;"><svg width="16"
+                            height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" x2="9" y1="12" y2="12" />
+                        </svg> Выйти из
                         аккаунта</button>
                     <button class="logout-btn" onclick="deleteAccount()"
-                        style="border-color: #dc2626; color: #dc2626;">🗑️ Удалить аккаунт навсегда</button>
+                        style="border-color: #dc2626; color: #dc2626;"><svg width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" style="margin-right: 6px;">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                        </svg> Удалить аккаунт навсегда</button>
                 </div>
             </div>
         </div>

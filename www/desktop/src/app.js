@@ -2,13 +2,83 @@
 // Fixed bugs, better sounds, voice messages, improved design
 
 const CONFIG = {
-    API_URL: 'https://api.cybermajor.shop',
-    WS_URL: 'wss://api.cybermajor.shop',
+    API_URL: 'https://m-essenger.onrender.com',
+    WS_URL: 'wss://m-essenger.onrender.com',
     GIPHY_API_KEY: 'dc6zaTOxFJmzC'
 };
 
 // Username validation regex - only Latin letters, numbers, and underscore
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
+
+// ==================== TOAST & MODAL SYSTEM ====================
+// SVG icons for toast notifications
+const ICONS = {
+    success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    question: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    channel: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+    group: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+};
+
+function showToast(message, type = 'info', title = null) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const titles = { success: 'Успешно', error: 'Ошибка', warning: 'Внимание', info: 'Информация' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${ICONS[type] || ICONS.info}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title || titles[type]}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showModal(options = {}) {
+    const { icon = ICONS.question, title = 'Подтверждение', message = '', buttons = [] } = options;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-modal-overlay';
+    overlay.innerHTML = `
+        <div class="custom-modal">
+            <div class="custom-modal-icon">${icon}</div>
+            <div class="custom-modal-title">${title}</div>
+            <div class="custom-modal-message">${message}</div>
+            <div class="custom-modal-buttons"></div>
+        </div>
+    `;
+
+    const buttonsContainer = overlay.querySelector('.custom-modal-buttons');
+    buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.className = `custom-modal-btn ${btn.primary ? 'primary' : 'secondary'}`;
+        button.textContent = btn.text;
+        button.onclick = () => {
+            overlay.remove();
+            btn.onClick?.();
+        };
+        buttonsContainer.appendChild(button);
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+// Global wrapper to replace all alerts
+window.showToast = showToast;
+window.showModal = showModal;
 
 // ==================== AUDIO SYSTEM ====================
 class AudioManager {
@@ -192,6 +262,8 @@ const state = {
     user: null,
     conversations: [],
     currentConversation: null,
+    currentChannel: null,
+    currentGroup: null,
     messages: [],
     ws: null,
     peerConnection: null,
@@ -281,24 +353,59 @@ let voiceRecordingTimer = null;
 
 // ==================== INITIALIZATION ====================
 function init() {
-    const savedUser = localStorage.getItem('m-essenger-user');
-    const savedSettings = localStorage.getItem('m-essenger-settings');
-
-    if (savedSettings) {
-        state.settings = { ...state.settings, ...JSON.parse(savedSettings) };
-        audioManager.enabled.messages = state.settings.soundMessages;
-        audioManager.enabled.calls = state.settings.soundCalls;
-        updateSettingsUI();
-    }
-
-    if (savedUser) {
-        state.user = JSON.parse(savedUser);
-        showApp();
-        // Check if username needs to be changed
-        checkUsernameValid();
-    }
-
+    // No localStorage - app starts fresh every time
+    // User must login each session (cloud-only architecture)
     setupEventListeners();
+    requestNotificationPermission();
+}
+
+// Request permission for desktop notifications
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+// Show desktop notification
+function showDesktopNotification(title, body, icon = null) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+            body: body,
+            icon: icon || 'icon.png',
+            badge: 'icon.png',
+            tag: 'messenger-notification',
+            requireInteraction: true
+        });
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+        // Auto-close after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+    }
+}
+
+// Handle pending calls received on reconnect
+function handlePendingCalls(calls) {
+    if (!calls || calls.length === 0) return;
+
+    calls.forEach(call => {
+        const callType = call.call_type === 'video' ? 'Видеозвонок' : 'Голосовой звонок';
+        const callerName = call.caller_name || call.caller_username || 'Неизвестный';
+
+        // Show toast notification
+        showToast(`${callType} от @${callerName}`, 'warning', 'Пропущенный звонок');
+
+        // Show desktop notification
+        showDesktopNotification(
+            'Пропущенный звонок',
+            `${callerName} звонил(а) вам (${callType})`,
+            null
+        );
+    });
+
+    // Play notification sound
+    audioManager.playMessageSound();
 }
 
 function isValidUsername(username) {
@@ -343,7 +450,6 @@ async function saveRequiredUsername() {
         const data = await response.json();
         if (data.success) {
             state.user = { ...state.user, ...data.user };
-            localStorage.setItem('m-essenger-user', JSON.stringify(state.user));
             updateUserDisplay();
             document.getElementById('username-required-modal').classList.add('hidden');
         } else {
@@ -438,7 +544,6 @@ async function handleAuth(e) {
         if (!response.ok) throw new Error(data.error || 'Ошибка');
 
         state.user = data.user;
-        localStorage.setItem('m-essenger-user', JSON.stringify(data.user));
         showApp();
     } catch (error) {
         showError(error.message);
@@ -451,14 +556,30 @@ function showError(message) {
 }
 
 function logout() {
+    // Complete state reset - no data persists
     state.user = null;
-    localStorage.removeItem('m-essenger-user');
+    state.conversations = [];
+    state.currentConversation = null;
+    state.currentChannel = null;
+    state.currentGroup = null;
+    state.messages = [];
     state.ws?.close();
+    state.ws = null;
+    state.peerConnection = null;
+    state.localStream = null;
+    state.isInCall = false;
+    state.isMuted = false;
+    state.isVideoEnabled = true;
+    state.incomingCallData = null;
+
+    // Reset UI
     elements.loginScreen.classList.remove('hidden');
     elements.appScreen.classList.add('hidden');
     elements.emailInput.value = '';
     elements.passwordInput.value = '';
     elements.usernameInput.value = '';
+    elements.chatList.innerHTML = '';
+    elements.messagesContainer.innerHTML = '';
 }
 
 // ==================== PROFILE ====================
@@ -503,7 +624,6 @@ async function saveProfile() {
         const data = await response.json();
         if (data.success) {
             state.user = { ...state.user, ...data.user };
-            localStorage.setItem('m-essenger-user', JSON.stringify(state.user));
             updateUserDisplay();
             closeProfileModal();
         } else {
@@ -586,7 +706,7 @@ function toggleSetting(setting) {
         audioManager.enabled.calls = state.settings.soundCalls;
     }
     updateSettingsUI();
-    localStorage.setItem('m-essenger-settings', JSON.stringify(state.settings));
+    // Settings are session-only, not persisted to localStorage
 }
 
 async function loadMediaDevices() {
@@ -619,7 +739,7 @@ function saveSettings() {
     state.settings.microphoneId = elements.microphoneSelect.value;
     state.settings.speakerId = elements.speakerSelect.value;
     state.settings.cameraId = elements.cameraSelect.value;
-    localStorage.setItem('m-essenger-settings', JSON.stringify(state.settings));
+    // Settings are session-only, not persisted to localStorage
     closeSettingsModal();
 }
 
@@ -673,11 +793,19 @@ function handleWebSocketMessage(data) {
             break;
         case 'call_ended':
         case 'call_rejected':
-            endCall();
+            handleCallError('Звонок отклонен', true);
             break;
         case 'call_error':
-            alert(data.error);
-            endCall();
+            handleCallError(data.error);
+            break;
+        case 'call_pending':
+            // User was offline, they'll get notification when online
+            showToast(data.message, 'info', 'Звонок');
+            handleCallError('Пользователь офлайн', true);
+            break;
+        case 'pending_calls':
+            // Received missed calls from when we were offline
+            handlePendingCalls(data.calls);
             break;
     }
 }
@@ -898,19 +1026,76 @@ function handleMessageInput() {
 
 function sendMessage(content = null, type = 'text') {
     const messageContent = content || elements.messageInput.value.trim();
-    if (!messageContent || !state.currentConversation || !state.ws) return;
+    if (!messageContent) return;
 
-    state.ws.send(JSON.stringify({
-        type: 'message',
-        conversationId: state.currentConversation.id,
-        senderId: state.user.id,
-        content: messageContent,
-        messageType: type
-    }));
+    // Check what context we're in
+    if (state.currentChannel) {
+        // Send to channel via HTTP (only admins can post)
+        sendChannelMessage(messageContent, type);
+    } else if (state.currentGroup) {
+        // Send to group via WebSocket
+        sendGroupMessage(messageContent, type);
+    } else if (state.currentConversation && state.ws) {
+        // Private message via WebSocket
+        state.ws.send(JSON.stringify({
+            type: 'message',
+            conversationId: state.currentConversation.id,
+            senderId: state.user.id,
+            content: messageContent,
+            messageType: type
+        }));
+    } else {
+        return;
+    }
 
     elements.messageInput.value = '';
     elements.messageInput.style.height = 'auto';
     elements.sendBtn.disabled = true;
+}
+
+async function sendChannelMessage(content, type = 'text') {
+    if (!state.currentChannel) return;
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${state.currentChannel.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: state.user.id,
+                content: content,
+                type: type
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Reload messages
+            await loadChannelMessages(state.currentChannel.id);
+        } else {
+            alert(data.error || 'Только администраторы могут писать в канале');
+        }
+    } catch (error) {
+        console.error('Send channel message error:', error);
+    }
+}
+
+async function sendGroupMessage(content, type = 'text') {
+    if (!state.currentGroup) return;
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${state.currentGroup.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: state.user.id,
+                content: content,
+                type: type
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            await loadGroupMessages(state.currentGroup.id);
+        }
+    } catch (error) {
+        console.error('Send group message error:', error);
+    }
 }
 
 function handleTypingIndicator(data) {
@@ -1123,6 +1308,9 @@ const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 async function startCall(isVideo) {
     if (!state.currentConversation || state.isInCall) return;
 
+    // Allow calling offline users - check done on server/peer level, not client
+    // if (state.currentConversation.other_status !== 'online') ... removed restriction
+
     try {
         state.localStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -1151,11 +1339,19 @@ async function startCall(isVideo) {
             isVideo
         }));
 
-        elements.callStatus.textContent = 'Вызов...';
+        elements.callStatus.textContent = 'Звоним...';
+
+        // Timeout for no answer (60 seconds - increased for stability)
+        setTimeout(() => {
+            if (state.isInCall && elements.callStatus.textContent === 'Звоним...') {
+                showToast('Абонент не отвечает', 'warning');
+                handleCallError('Нет ответа');
+            }
+        }, 60000);
+
     } catch (error) {
         console.error('Start call error:', error);
-        alert('Не удалось начать звонок');
-        endCall();
+        handleCallError('Ошибка соединения');
     }
 }
 
@@ -1367,6 +1563,33 @@ function endCall() {
     elements.videoToggleBtn.classList.remove('active');
 }
 
+
+
+function handleCallError(message, isEnd = false) {
+    if (isEnd) {
+        // Show error quickly then close
+        const statusEl = elements.callStatus;
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.style.color = '#ef4444'; // Red color
+        }
+        setTimeout(() => endCall(), 2000);
+    } else {
+        // Show error state in call UI
+        elements.callOverlay.classList.remove('hidden', 'voice-call', 'video-call');
+        elements.callOverlay.classList.add('voice-call'); // Default to voice style for error
+
+        elements.callAvatar.textContent = '!';
+        elements.callAvatar.style.background = 'var(--danger)';
+        elements.callName.textContent = 'Ошибка';
+        elements.callStatus.textContent = message;
+        elements.callStatus.style.color = '#ef4444';
+
+        // Show only end call button
+        elements.callControls.innerHTML = `<button class="call-btn end-call" onclick="endCall()">Закрыть</button>`;
+    }
+}
+
 // ==================== UTILITIES ====================
 function debounce(func, wait) {
     let timeout;
@@ -1478,7 +1701,7 @@ function renderChannels(channels) {
 
     list.innerHTML = channels.map(ch => `
         <div class="channel-item" onclick="selectChannel('${ch.id}')">
-            <div class="channel-icon">📢</div>
+            <div class="channel-icon">${ICONS.channel}</div>
             <div class="item-content">
                 <div class="item-name">${ch.name}</div>
                 <div class="member-count">${ch.member_count || 1} участников</div>
@@ -1509,7 +1732,7 @@ function renderGroups(groups) {
 
     list.innerHTML = groups.map(g => `
         <div class="group-item" onclick="selectGroup('${g.id}')">
-            <div class="group-icon">👥</div>
+            <div class="group-icon">${ICONS.group}</div>
             <div class="item-content">
                 <div class="item-name">${g.name}</div>
                 <div class="member-count">${g.member_count || 1} участников</div>
@@ -1518,14 +1741,98 @@ function renderGroups(groups) {
     `).join('');
 }
 
-function selectChannel(channelId) {
-    // TODO: Implement channel view
-    console.log('Selected channel:', channelId);
+async function selectChannel(channelId) {
+    try {
+        // Fetch channel details
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${channelId}`);
+        const channel = await response.json();
+        if (!channel || channel.error) {
+            console.error('Channel not found');
+            return;
+        }
+
+        // Store current channel
+        state.currentChannel = channel;
+        state.currentConversation = null; // Clear private chat
+        state.currentGroup = null;
+
+        // Update UI
+        elements.emptyState.classList.add('hidden');
+        elements.chatWindow.classList.remove('hidden');
+        elements.chatAvatar.innerHTML = ICONS.channel;
+        elements.chatAvatar.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
+        elements.chatUsername.textContent = channel.name;
+        elements.chatStatus.textContent = `${channel.member_count || 1} участников`;
+
+        // Hide call buttons for channels
+        document.querySelectorAll('.call-btn').forEach(btn => btn.style.display = 'none');
+
+        // Load channel messages
+        await loadChannelMessages(channelId);
+
+        // Update active state
+        document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[onclick="selectChannel('${channelId}')"]`)?.classList.add('active');
+    } catch (error) {
+        console.error('Select channel error:', error);
+    }
 }
 
-function selectGroup(groupId) {
-    // TODO: Implement group view
-    console.log('Selected group:', groupId);
+async function loadChannelMessages(channelId) {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/channels/${channelId}/messages`);
+        state.messages = await response.json();
+        renderMessages();
+    } catch (error) {
+        console.error('Load channel messages error:', error);
+    }
+}
+
+async function selectGroup(groupId) {
+    try {
+        // Fetch group details
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${groupId}`);
+        const group = await response.json();
+        if (!group || group.error) {
+            console.error('Group not found');
+            return;
+        }
+
+        // Store current group
+        state.currentGroup = group;
+        state.currentConversation = null;
+        state.currentChannel = null;
+
+        // Update UI
+        elements.emptyState.classList.add('hidden');
+        elements.chatWindow.classList.remove('hidden');
+        elements.chatAvatar.innerHTML = ICONS.group;
+        elements.chatAvatar.style.background = 'linear-gradient(135deg, #10b981, #3b82f6)';
+        elements.chatUsername.textContent = group.name;
+        elements.chatStatus.textContent = `${group.member_count || 1} участников`;
+
+        // Show call buttons for groups (group calls)
+        document.querySelectorAll('.call-btn').forEach(btn => btn.style.display = '');
+
+        // Load group messages
+        await loadGroupMessages(groupId);
+
+        // Update active state
+        document.querySelectorAll('.group-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`[onclick="selectGroup('${groupId}')"]`)?.classList.add('active');
+    } catch (error) {
+        console.error('Select group error:', error);
+    }
+}
+
+async function loadGroupMessages(groupId) {
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/api/groups/${groupId}/messages`);
+        state.messages = await response.json();
+        renderMessages();
+    } catch (error) {
+        console.error('Load group messages error:', error);
+    }
 }
 
 function openCreateModal() {
@@ -1544,7 +1851,13 @@ async function createChannelOrGroup() {
     const description = document.getElementById('create-description').value.trim();
 
     if (!name) {
-        alert('Введите название');
+        showToast('Введите название', 'warning');
+        return;
+    }
+
+    // Validate user is logged in
+    if (!state.user || !state.user.id) {
+        showToast('Пожалуйста, перезайдите в аккаунт', 'error');
         return;
     }
 
@@ -1556,16 +1869,22 @@ async function createChannelOrGroup() {
             body: JSON.stringify({ name, description, ownerId: state.user.id })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
         if (data.success) {
             closeCreateModal();
+            showToast(`${type === 'channel' ? 'Канал' : 'Группа'} создан(а)!`, 'success');
             switchTab(type === 'channel' ? 'channels' : 'groups');
         } else {
-            alert('Ошибка создания');
+            showToast(data.error || 'Ошибка создания', 'error');
         }
     } catch (error) {
         console.error('Create error:', error);
-        alert('Ошибка соединения');
+        showToast(error.message || 'Ошибка соединения', 'error');
     }
 }
 

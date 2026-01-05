@@ -162,6 +162,18 @@ const initDb = async () => {
         );
       `);
 
+      // Pending calls for offline users
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS pending_calls (
+          id TEXT PRIMARY KEY,
+          caller_id TEXT NOT NULL REFERENCES users(id),
+          receiver_id TEXT NOT NULL REFERENCES users(id),
+          caller_name TEXT NOT NULL,
+          call_type TEXT DEFAULT 'audio',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       console.log('Database tables initialized');
     } finally {
       client.release();
@@ -610,6 +622,38 @@ const dbHelpers = {
       LIMIT $2
     `, [userId, limit]);
     return res.rows;
+  },
+
+  // ===================== PENDING CALL OPERATIONS =====================
+  savePendingCall: async (callerId, receiverId, callerName, callType = 'audio') => {
+    const id = uuidv4();
+    await pool.query(
+      'INSERT INTO pending_calls (id, caller_id, receiver_id, caller_name, call_type) VALUES ($1, $2, $3, $4, $5)',
+      [id, callerId, receiverId, callerName, callType]
+    );
+    return { id, callerId, receiverId, callerName, callType };
+  },
+
+  getPendingCalls: async (userId) => {
+    const res = await pool.query(
+      `SELECT pc.*, u.username as caller_username, u.avatar as caller_avatar
+       FROM pending_calls pc
+       JOIN users u ON pc.caller_id = u.id
+       WHERE pc.receiver_id = $1
+       ORDER BY pc.created_at DESC`,
+      [userId]
+    );
+    return res.rows;
+  },
+
+  deletePendingCall: async (callId) => {
+    await pool.query('DELETE FROM pending_calls WHERE id = $1', [callId]);
+    return { success: true };
+  },
+
+  clearPendingCalls: async (userId) => {
+    await pool.query('DELETE FROM pending_calls WHERE receiver_id = $1', [userId]);
+    return { success: true };
   }
 };
 

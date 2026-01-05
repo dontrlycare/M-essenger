@@ -11,17 +11,27 @@ const CONFIG = {
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
 // ==================== TOAST & MODAL SYSTEM ====================
+// SVG icons for toast notifications
+const ICONS = {
+    success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    question: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    channel: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+    group: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+};
+
 function showToast(message, type = 'info', title = null) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
     const titles = { success: 'Успешно', error: 'Ошибка', warning: 'Внимание', info: 'Информация' };
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
-        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-icon">${ICONS[type] || ICONS.info}</div>
         <div class="toast-content">
             <div class="toast-title">${title || titles[type]}</div>
             <div class="toast-message">${message}</div>
@@ -33,7 +43,7 @@ function showToast(message, type = 'info', title = null) {
 }
 
 function showModal(options = {}) {
-    const { icon = '❓', title = 'Подтверждение', message = '', buttons = [] } = options;
+    const { icon = ICONS.question, title = 'Подтверждение', message = '', buttons = [] } = options;
 
     const overlay = document.createElement('div');
     overlay.className = 'custom-modal-overlay';
@@ -346,6 +356,56 @@ function init() {
     // No localStorage - app starts fresh every time
     // User must login each session (cloud-only architecture)
     setupEventListeners();
+    requestNotificationPermission();
+}
+
+// Request permission for desktop notifications
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+// Show desktop notification
+function showDesktopNotification(title, body, icon = null) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+            body: body,
+            icon: icon || 'icon.png',
+            badge: 'icon.png',
+            tag: 'messenger-notification',
+            requireInteraction: true
+        });
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+        // Auto-close after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+    }
+}
+
+// Handle pending calls received on reconnect
+function handlePendingCalls(calls) {
+    if (!calls || calls.length === 0) return;
+
+    calls.forEach(call => {
+        const callType = call.call_type === 'video' ? 'Видеозвонок' : 'Голосовой звонок';
+        const callerName = call.caller_name || call.caller_username || 'Неизвестный';
+
+        // Show toast notification
+        showToast(`${callType} от @${callerName}`, 'warning', 'Пропущенный звонок');
+
+        // Show desktop notification
+        showDesktopNotification(
+            'Пропущенный звонок',
+            `${callerName} звонил(а) вам (${callType})`,
+            null
+        );
+    });
+
+    // Play notification sound
+    audioManager.playMessageSound();
 }
 
 function isValidUsername(username) {
@@ -737,6 +797,15 @@ function handleWebSocketMessage(data) {
             break;
         case 'call_error':
             handleCallError(data.error);
+            break;
+        case 'call_pending':
+            // User was offline, they'll get notification when online
+            showToast(data.message, 'info', 'Звонок');
+            handleCallError('Пользователь офлайн', true);
+            break;
+        case 'pending_calls':
+            // Received missed calls from when we were offline
+            handlePendingCalls(data.calls);
             break;
     }
 }
@@ -1632,7 +1701,7 @@ function renderChannels(channels) {
 
     list.innerHTML = channels.map(ch => `
         <div class="channel-item" onclick="selectChannel('${ch.id}')">
-            <div class="channel-icon">📢</div>
+            <div class="channel-icon">${ICONS.channel}</div>
             <div class="item-content">
                 <div class="item-name">${ch.name}</div>
                 <div class="member-count">${ch.member_count || 1} участников</div>
@@ -1663,7 +1732,7 @@ function renderGroups(groups) {
 
     list.innerHTML = groups.map(g => `
         <div class="group-item" onclick="selectGroup('${g.id}')">
-            <div class="group-icon">👥</div>
+            <div class="group-icon">${ICONS.group}</div>
             <div class="item-content">
                 <div class="item-name">${g.name}</div>
                 <div class="member-count">${g.member_count || 1} участников</div>
@@ -1690,7 +1759,7 @@ async function selectChannel(channelId) {
         // Update UI
         elements.emptyState.classList.add('hidden');
         elements.chatWindow.classList.remove('hidden');
-        elements.chatAvatar.textContent = '📢';
+        elements.chatAvatar.innerHTML = ICONS.channel;
         elements.chatAvatar.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
         elements.chatUsername.textContent = channel.name;
         elements.chatStatus.textContent = `${channel.member_count || 1} участников`;
@@ -1737,7 +1806,7 @@ async function selectGroup(groupId) {
         // Update UI
         elements.emptyState.classList.add('hidden');
         elements.chatWindow.classList.remove('hidden');
-        elements.chatAvatar.textContent = '👥';
+        elements.chatAvatar.innerHTML = ICONS.group;
         elements.chatAvatar.style.background = 'linear-gradient(135deg, #10b981, #3b82f6)';
         elements.chatUsername.textContent = group.name;
         elements.chatStatus.textContent = `${group.member_count || 1} участников`;
@@ -1782,7 +1851,13 @@ async function createChannelOrGroup() {
     const description = document.getElementById('create-description').value.trim();
 
     if (!name) {
-        alert('Введите название');
+        showToast('Введите название', 'warning');
+        return;
+    }
+
+    // Validate user is logged in
+    if (!state.user || !state.user.id) {
+        showToast('Пожалуйста, перезайдите в аккаунт', 'error');
         return;
     }
 
@@ -1795,19 +1870,21 @@ async function createChannelOrGroup() {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         if (data.success) {
             closeCreateModal();
+            showToast(`${type === 'channel' ? 'Канал' : 'Группа'} создан(а)!`, 'success');
             switchTab(type === 'channel' ? 'channels' : 'groups');
         } else {
-            alert('Ошибка создания: ' + (data.error || 'Неизвестная ошибка'));
+            showToast(data.error || 'Ошибка создания', 'error');
         }
     } catch (error) {
         console.error('Create error:', error);
-        alert('Ошибка соединения. Проверьте интернет или попробуйте позже.');
+        showToast(error.message || 'Ошибка соединения', 'error');
     }
 }
 

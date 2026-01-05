@@ -7,5 +7,10 @@
     },
     "android": {
         "allowMixedContent": true
+    },
+    "ios": {
+        "contentInset": "automatic",
+        "allowsLinkPreview": true,
+        "scrollEnabled": true
     }
 }

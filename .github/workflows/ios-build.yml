@@ -1,0 +1,70 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Ручной запуск
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web Assets  
+        run: npm run build
+
+
+      - name: Add iOS Platform
+        run: npx cap add ios || true
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install
+
+      - name: Build Unsigned IPA
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Create IPA
+        run: |
+          cd ios/App/build/Build/Products/Debug-iphoneos
+          mkdir -p Payload
+          cp -r App.app Payload/
+          zip -r M-essenger.ipa Payload/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: M-essenger-ipa
+          path: ios/App/build/Build/Products/Debug-iphoneos/M-essenger.ipa

@@ -1895,4 +1895,138 @@ window.openCreateModal = openCreateModal;
 window.closeCreateModal = closeCreateModal;
 window.createChannelOrGroup = createChannelOrGroup;
 
+// ==================== MOBILE FUNCTIONS ====================
+function isMobile() {
+    return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function openMobileSearch() {
+    // Focus the search input and show it
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        // Show search container on mobile
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer) {
+            searchContainer.style.display = 'block';
+            searchContainer.style.position = 'fixed';
+            searchContainer.style.top = '0';
+            searchContainer.style.left = '0';
+            searchContainer.style.right = '0';
+            searchContainer.style.padding = '16px';
+            searchContainer.style.background = '#1c1c1d';
+            searchContainer.style.zIndex = '200';
+        }
+        searchInput.focus();
+
+        // Add close button
+        let closeBtn = document.getElementById('mobile-search-close');
+        if (!closeBtn) {
+            closeBtn = document.createElement('button');
+            closeBtn.id = 'mobile-search-close';
+            closeBtn.innerHTML = '←';
+            closeBtn.style.cssText = 'position: absolute; left: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: white; font-size: 24px; cursor: pointer; z-index: 201;';
+            closeBtn.onclick = closeMobileSearch;
+            if (searchContainer) {
+                searchContainer.style.paddingLeft = '50px';
+                searchContainer.prepend(closeBtn);
+            }
+        }
+    }
+}
+
+function closeMobileSearch() {
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+        searchContainer.style.display = '';
+        searchContainer.style.position = '';
+        searchContainer.style.top = '';
+        searchContainer.style.left = '';
+        searchContainer.style.right = '';
+        searchContainer.style.padding = '';
+        searchContainer.style.background = '';
+        searchContainer.style.zIndex = '';
+        searchContainer.style.paddingLeft = '';
+
+        const closeBtn = document.getElementById('mobile-search-close');
+        if (closeBtn) closeBtn.remove();
+    }
+
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = '';
+
+    const searchResults = document.getElementById('search-results');
+    if (searchResults) searchResults.classList.add('hidden');
+}
+
+function switchMobileTab(tab) {
+    // Update navigation items
+    document.querySelectorAll('.mobile-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const activeNavItem = document.getElementById(`mobile-nav-${tab}`);
+    if (activeNavItem) activeNavItem.classList.add('active');
+
+    // Switch sidebar tabs
+    if (tab === 'chats') {
+        switchTab('chats');
+    }
+}
+
+function closeChat() {
+    // Hide main content with animation
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.classList.remove('active');
+    }
+
+    // Reset current conversation
+    state.currentConversation = null;
+    state.currentChannel = null;
+    state.currentGroup = null;
+
+    // Hide chat window
+    if (elements.chatWindow) elements.chatWindow.classList.add('hidden');
+    if (elements.emptyState) elements.emptyState.classList.remove('hidden');
+}
+
+// Override selectConversation to handle mobile UI
+const originalSelectConversation = selectConversation;
+selectConversation = async function (conversationId) {
+    await originalSelectConversation(conversationId);
+
+    // On mobile, show main content with slide animation
+    if (isMobile()) {
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.classList.add('active');
+        }
+    }
+};
+
+// Hide mobile elements on desktop
+function updateMobileUI() {
+    const mobileHeader = document.getElementById('mobile-header');
+    const mobileBottomNav = document.getElementById('mobile-bottom-nav');
+
+    if (isMobile()) {
+        if (mobileHeader) mobileHeader.style.display = 'flex';
+        if (mobileBottomNav) mobileBottomNav.style.display = 'flex';
+    } else {
+        if (mobileHeader) mobileHeader.style.display = 'none';
+        if (mobileBottomNav) mobileBottomNav.style.display = 'none';
+    }
+}
+
+// Listen for resize events
+window.addEventListener('resize', updateMobileUI);
+document.addEventListener('DOMContentLoaded', updateMobileUI);
+
+// Export mobile functions
+window.openMobileSearch = openMobileSearch;
+window.closeMobileSearch = closeMobileSearch;
+window.switchMobileTab = switchMobileTab;
+window.closeChat = closeChat;
+window.updateMobileUI = updateMobileUI;
+
 init();
+

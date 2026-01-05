@@ -1,14 +1,16 @@
-/* Mobile Specific Styles - Telegram Style */
+/* Mobile Specific Styles - Telegram Style Design */
 
 :root {
     --mobile-bg: #0f0f0f;
     --mobile-header: #1c1c1d;
     --mobile-accent: #8774e1;
-    /* Telegram Blue/Purple */
     --mobile-text: #ffffff;
     --mobile-text-secondary: #aaaaaa;
+    --mobile-text-muted: #666666;
     --mobile-message-in: #212121;
     --mobile-message-out: #8774e1;
+    --mobile-tab-active: #8774e1;
+    --mobile-border: rgba(255, 255, 255, 0.08);
 }
 
 /* Loading Overlay - Global */
@@ -40,7 +42,13 @@
     }
 }
 
-/* Force Mobile Layout on small screens or when loaded in app */
+/* Hide mobile-only elements on desktop */
+.mobile-header,
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Force Mobile Layout on small screens */
 @media (max-width: 768px) {
 
     /* Disable zoom and scroll on mobile */
@@ -65,13 +73,15 @@
         overflow: hidden;
     }
 
-    /* Hide Desktop Elements - Title bar with 3 buttons */
+    /* ===== HIDE DESKTOP ELEMENTS COMPLETELY ===== */
+    /* Title bar with 3 buttons - COMPLETELY HIDDEN ON MOBILE */
     #title-bar,
     .desktop-only,
-    .title-bar,
-    .sidebar-header,
-    .search-container {
+    .title-bar {
         display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
     }
 
     /* Hide "Выберите чат" empty state on mobile */
@@ -80,19 +90,26 @@
         display: none !important;
     }
 
-    /* Fix app-screen margin since title-bar is hidden */
+    /* Hide logout button on mobile - we'll have it in settings */
+    .sidebar-footer,
+    .logout-btn {
+        display: none !important;
+    }
+
+    /* ===== FIX MARGINS SINCE TITLE BAR IS HIDDEN ===== */
     #app-screen {
         margin-top: 0 !important;
+        padding-top: 0 !important;
         height: 100vh !important;
         height: 100dvh !important;
     }
 
-    /* Fix login screen padding */
     #login-screen {
-        padding-top: 40px !important;
+        padding-top: 60px !important;
+        margin-top: 0 !important;
     }
 
-    /* Full Screen Containers */
+    /* ===== FULL SCREEN CONTAINERS ===== */
     .app-container,
     .sidebar,
     .main-content {
@@ -106,25 +123,134 @@
         background: var(--mobile-bg);
     }
 
-    /* Chat List (Telegram Style) */
-    .sidebar {
-        z-index: 10;
-        padding-bottom: 60px;
-        /* Space for bottom nav */
-        display: flex !important;
-        /* Force show sidebar initially */
+    /* ===== TELEGRAM STYLE MOBILE HEADER ===== */
+    .mobile-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: var(--mobile-header);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        z-index: 100;
+        border-bottom: 1px solid var(--mobile-border);
     }
 
+    .mobile-header-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--mobile-text);
+    }
+
+    .mobile-header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .mobile-header-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        color: var(--mobile-text-secondary);
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-header-btn:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ===== SIDEBAR / CHAT LIST TELEGRAM STYLE ===== */
+    .sidebar {
+        z-index: 10;
+        padding-top: 56px;
+        padding-bottom: 70px;
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    /* Hide desktop sidebar header */
+    .sidebar-header {
+        display: none !important;
+    }
+
+    /* Hide desktop search container - we'll add mobile search */
+    .search-container {
+        display: none !important;
+    }
+
+    /* ===== TELEGRAM STYLE TABS ===== */
+    .sidebar-tabs {
+        display: flex;
+        background: var(--mobile-bg);
+        padding: 8px 12px;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-bottom: 1px solid var(--mobile-border);
+    }
+
+    .sidebar-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sidebar-tab {
+        flex-shrink: 0;
+        padding: 8px 16px;
+        border: none;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--mobile-text-secondary);
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+
+    .sidebar-tab svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .sidebar-tab:active {
+        transform: scale(0.95);
+    }
+
+    .sidebar-tab.active {
+        background: var(--mobile-accent);
+        color: var(--mobile-text);
+    }
+
+    /* ===== CHAT LIST TELEGRAM STYLE ===== */
     .chat-list {
+        flex: 1;
         padding: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .chat-item {
-        padding: 10px 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--mobile-border);
         border-radius: 0;
         margin: 0;
         background: transparent;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .chat-item:hover,
@@ -132,74 +258,223 @@
         background-color: rgba(255, 255, 255, 0.05);
     }
 
-    .chat-img {
-        width: 50px;
-        height: 50px;
+    .chat-item .avatar {
+        width: 52px;
+        height: 52px;
         border-radius: 50%;
-        margin-right: 12px;
+        font-size: 20px;
+        flex-shrink: 0;
     }
 
-    .chat-info {
+    .chat-content {
         flex: 1;
+        min-width: 0;
     }
 
     .chat-name {
         font-size: 16px;
         font-weight: 600;
         margin-bottom: 4px;
+        color: var(--mobile-text);
     }
 
     .chat-preview {
         color: var(--mobile-text-secondary);
         font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* Main Content (Chat View) */
+    .chat-time {
+        font-size: 12px;
+        color: var(--mobile-text-muted);
+    }
+
+    /* ===== CHANNEL/GROUP ITEMS TELEGRAM STYLE ===== */
+    .channel-item,
+    .group-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--mobile-border);
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .channel-icon,
+    .group-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+    }
+
+    /* ===== FLOATING ACTION BUTTON (CREATE) ===== */
+    .create-btn {
+        position: fixed;
+        bottom: 80px;
+        right: 16px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--mobile-accent);
+        color: white;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(135, 116, 225, 0.4);
+        z-index: 50;
+    }
+
+    .create-btn:active {
+        transform: scale(0.9);
+    }
+
+    /* ===== TELEGRAM STYLE BOTTOM NAVIGATION ===== */
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: var(--mobile-header);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        border-top: 1px solid var(--mobile-border);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px 16px;
+        background: transparent;
+        border: none;
+        color: var(--mobile-text-secondary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .mobile-nav-item svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .mobile-nav-item span {
+        font-size: 10px;
+        font-weight: 500;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--mobile-accent);
+    }
+
+    .mobile-nav-item:active {
+        opacity: 0.7;
+    }
+
+    /* Hide bottom-nav if it exists from old code */
+    .bottom-nav {
+        display: none !important;
+    }
+
+    /* ===== MAIN CONTENT (CHAT VIEW) ===== */
     .main-content {
         z-index: 20;
         transform: translateX(100%);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        background-image: url('https://w.wallhaven.cc/full/vg/wallhaven-vg88p5.jpg');
-        /* Dark pattern background */
-        background-size: cover;
-        background-position: center;
     }
 
     .main-content.active {
         transform: translateX(0);
     }
 
-    /* Chat Header */
+    /* ===== CHAT HEADER ===== */
     .chat-header-bar {
         background-color: var(--mobile-header);
-        padding: 10px 16px;
+        padding: 8px 12px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         height: 56px;
+        display: flex;
+        align-items: center;
     }
 
     .back-btn {
-        display: block !important;
-        margin-right: 16px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-right: 8px;
         background: none;
         border: none;
         color: white;
-        font-size: 24px;
-        padding: 0 8px;
+        font-size: 22px;
+        border-radius: 50%;
+        cursor: pointer;
     }
 
-    /* Messages */
+    .back-btn:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-header-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .chat-header-text h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--mobile-text);
+    }
+
+    .chat-header-text span {
+        font-size: 13px;
+        color: var(--mobile-text-muted);
+    }
+
+    .chat-header-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+    }
+
+    .action-btn:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ===== MESSAGES ===== */
     .messages-container {
-        padding: 16px;
-        gap: 8px;
+        padding: 12px 16px;
+        padding-bottom: 80px;
+        gap: 6px;
+    }
+
+    .message {
+        max-width: 85%;
     }
 
     .message-bubble {
         padding: 8px 12px;
-        border-radius: 16px;
+        border-radius: 18px;
         font-size: 15px;
-        line-height: 1.3;
+        line-height: 1.4;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        max-width: 80%;
     }
 
     .message.received .message-bubble {
@@ -212,58 +487,73 @@
         border-bottom-right-radius: 4px;
     }
 
-    /* Bottom Nav */
-    .bottom-nav {
-        display: flex !important;
+    /* ===== MESSAGE INPUT ===== */
+    .message-input-container {
         position: fixed;
         bottom: 0;
         left: 0;
-        width: 100%;
-        height: 56px;
-        background-color: var(--mobile-header);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 30;
-        justify-content: space-around;
-        align-items: center;
-        padding-bottom: env(safe-area-inset-bottom);
+        right: 0;
+        background: var(--mobile-header);
+        padding: 8px 12px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+        border-top: 1px solid var(--mobile-border);
     }
 
-    .nav-item {
-        background: none;
-        border: none;
-        color: var(--mobile-text-secondary);
-        font-size: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
+    .message-input-wrapper {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 4px 8px 4px 16px;
     }
 
-    .nav-item.active {
-        color: var(--mobile-accent);
+    .message-input {
+        font-size: 15px;
+        padding: 10px 0;
     }
 
-    .nav-icon {
-        font-size: 20px;
+    .input-btn {
+        width: 36px;
+        height: 36px;
     }
 
-    /* Modals on mobile - full width */
+    .send-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* ===== MODALS ON MOBILE ===== */
     .modal {
         width: 95%;
         max-width: none;
         margin: 10px;
+        border-radius: 20px;
     }
 
-    /* Safe area insets for iOS */
-    .message-input-container {
-        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    .modal-overlay {
+        padding: 16px;
+    }
+
+    /* ===== SAFE AREA INSETS ===== */
+    @supports (padding-top: env(safe-area-inset-top)) {
+
+        .mobile-header,
+        .chat-header-bar {
+            padding-top: env(safe-area-inset-top, 0);
+            height: calc(56px + env(safe-area-inset-top, 0));
+        }
+
+        .sidebar {
+            padding-top: calc(56px + env(safe-area-inset-top, 0));
+        }
+
+        .mobile-bottom-nav {
+            height: calc(60px + env(safe-area-inset-bottom, 0));
+        }
     }
 }
 
 /* Capacitor/Cordova specific - detect native app */
 body.platform-ios,
 body.platform-android {
-    /* Ensure native app has correct styling */
     -webkit-overflow-scrolling: none;
     overscroll-behavior: none;
 }
@@ -272,18 +562,7 @@ body.platform-android {
 @supports (-webkit-touch-callout: none) {
     @media (max-width: 768px) {
         body {
-            /* iOS specific */
             -webkit-overflow-scrolling: touch;
-        }
-
-        /* iOS notch support */
-        #app-screen {
-            padding-top: env(safe-area-inset-top);
-        }
-
-        .bottom-nav {
-            height: calc(56px + env(safe-area-inset-bottom));
-            padding-bottom: env(safe-area-inset-bottom);
         }
     }
 }

@@ -1,5 +1,23 @@
 /* Mobile Specific Styles - Telegram Style */
 
+/* Hide mobile-only elements on desktop by default */
+.mobile-only {
+    display: none !important;
+}
+
+/* Hide desktop-only elements on mobile */
+@media (max-width: 768px) {
+
+    .desktop-only,
+    #title-bar {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: flex !important;
+    }
+}
+
 :root {
     --mobile-bg: #0f0f0f;
     --mobile-header: #1c1c1d;

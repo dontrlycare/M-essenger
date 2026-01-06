@@ -1697,7 +1697,12 @@
 
             <div id="chat-window" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="chat-header-bar">
-                    <button class="back-btn mobile-only" onclick="closeChat()">←</button>
+                    <button class="back-btn mobile-only" onclick="closeChat()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                    </button>
                     <div class="chat-header-info">
                         <div class="avatar" id="chat-avatar">U</div>
                         <div class="chat-header-text">

@@ -4,8 +4,7 @@
     "description": "M-essenger - Modern Messenger Application",
     "main": "index.html",
     "scripts": {
-        "copy-assets": "rm -rf www && mkdir www && cp index.html www/ && cp -r desktop www/",
-        "build": "npm run copy-assets"
+        "build": "node -e \"const fs=require('fs');const path=require('path');const www='www';if(!fs.existsSync(www))fs.mkdirSync(www,{recursive:true});['index.html','mobile.css','icon.png'].forEach(f=>{if(fs.existsSync(f))fs.copyFileSync(f,path.join(www,f))});const copyDir=(src,dest)=>{if(!fs.existsSync(src))return;if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});fs.readdirSync(src).forEach(f=>{const s=path.join(src,f),d=path.join(dest,f);fs.statSync(s).isDirectory()?copyDir(s,d):fs.copyFileSync(s,d)})};copyDir('desktop',path.join(www,'desktop'));\""
     },
     "devDependencies": {
         "@capacitor/android": "^5.7.8",

@@ -92,11 +92,11 @@
         display: none !important;
     }
 
-    /* Mobile Header - search and profile - extra padding for buttons to be lower */
+    /* Mobile Header - search and profile - moved down into white zone */
     .sidebar-header {
         display: flex !important;
         padding: 12px 16px;
-        padding-top: calc(20px + env(safe-area-inset-top));
+        padding-top: calc(45px + env(safe-area-inset-top));
         background: var(--mobile-header);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -243,13 +243,13 @@
         transform: translateX(0);
     }
 
-    /* Chat Header - extra padding so buttons are lower */
+    /* Chat Header - moved down into white zone below notch */
     .chat-header-bar {
         background-color: var(--mobile-header);
         padding: 10px 16px;
-        padding-top: calc(20px + env(safe-area-inset-top));
+        padding-top: calc(45px + env(safe-area-inset-top));
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        min-height: 56px;
+        min-height: 70px;
         height: auto;
     }
 
@@ -340,25 +340,29 @@
         margin: 10px;
     }
 
-    /* Safe area insets for iOS - message input higher */
+    /* Safe area insets for iOS - message input much higher */
     .message-input-container {
-        padding-bottom: calc(24px + env(safe-area-inset-bottom));
-        margin-bottom: 10px;
+        padding-bottom: calc(30px + env(safe-area-inset-bottom));
+        margin-bottom: 20px;
         display: block !important;
         background: var(--mobile-header);
+        position: relative !important;
+        z-index: 100;
     }
 
-    /* Ensure message input is visible when chat is open */
+    /* Ensure message input is ALWAYS visible when chat is open */
     .main-content.active .message-input-container {
-        position: relative;
-        z-index: 25;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 
-    /* Messages container needs proper height - more bottom space */
+    /* Messages container needs proper height - more bottom space for input */
     .main-content.active .messages-container {
         flex: 1;
         overflow-y: auto;
-        padding-bottom: 100px;
+        padding-bottom: 140px;
+        margin-bottom: 0;
     }
 
     /* Calls History Panel */

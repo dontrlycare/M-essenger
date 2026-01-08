@@ -536,3 +536,19 @@ body.platform-android {
         padding: 8px 6px !important;
     }
 }
+
+/* ========================================
+   LOGIN STATE - Hide bottom nav during login
+   ======================================== */
+@media (max-width: 768px) {
+
+    /* Hide bottom nav when app screen is hidden (login visible) */
+    body:has(#app-screen.hidden) .bottom-nav {
+        display: none !important;
+    }
+
+    /* Fallback for browsers without :has() support */
+    .bottom-nav.hide-on-login {
+        display: none !important;
+    }
+}

@@ -92,6 +92,7 @@ function hideLoading() {
 }
 
 // Detect mobile platform and add class to body
+let isMobile = false;
 function detectPlatform() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (/android/i.test(userAgent)) {
@@ -100,8 +101,21 @@ function detectPlatform() {
     if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
         document.body.classList.add('platform-ios');
     }
-    if (window.matchMedia('(max-width: 768px)').matches) {
+    if (window.matchMedia('(max-width: 768px)').matches || /android|iphone|ipad|ipod/i.test(userAgent)) {
         document.body.classList.add('is-mobile');
+        isMobile = true;
+    }
+}
+
+// Auto-request media permissions on mobile
+async function requestMediaPermissions() {
+    if (!isMobile) return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        stream.getTracks().forEach(track => track.stop());
+        console.log('Media permissions granted');
+    } catch (err) {
+        console.log('Media permissions request:', err.message);
     }
 }
 
@@ -225,18 +239,30 @@ class AudioManager {
 const audioManager = new AudioManager();
 
 // ==================== VOICE RECORDER ====================
+// Get supported MIME type for audio recording (iOS uses mp4)
+function getSupportedMimeType() {
+    const types = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
+    for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return ''; // Let browser choose default
+}
+
 class VoiceRecorder {
     constructor() {
         this.mediaRecorder = null;
         this.chunks = [];
         this.isRecording = false;
         this.startTime = null;
+        this.mimeType = '';
     }
 
     async start() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            this.mimeType = getSupportedMimeType();
+            const options = this.mimeType ? { mimeType: this.mimeType } : {};
+            this.mediaRecorder = new MediaRecorder(stream, options);
             this.chunks = [];
             this.startTime = Date.now();
 
@@ -250,6 +276,7 @@ class VoiceRecorder {
             return true;
         } catch (error) {
             console.error('Failed to start recording:', error);
+            showToast('Не удалось получить доступ к микрофону', 'error');
             return false;
         }
     }
@@ -381,11 +408,35 @@ let isLoginMode = true;
 let voiceRecordingTimer = null;
 
 // ==================== INITIALIZATION ====================
-function init() {
+async function init() {
     // Detect platform for mobile-specific styling
     detectPlatform();
-    // No localStorage - app starts fresh every time
-    // User must login each session (cloud-only architecture)
+
+    // Auto-request media permissions on mobile
+    if (isMobile) {
+        requestMediaPermissions();
+    }
+
+    // Check for saved session (auto-login)
+    const savedUser = localStorage.getItem('m_essenger_user');
+    if (savedUser) {
+        try {
+            showLoading();
+            state.user = JSON.parse(savedUser);
+            // Verify user still exists on server
+            const response = await fetch(`${CONFIG.API_URL}/api/users/${state.user.id}`);
+            if (response.ok) {
+                showApp();
+            } else {
+                localStorage.removeItem('m_essenger_user');
+                hideLoading();
+            }
+        } catch (e) {
+            localStorage.removeItem('m_essenger_user');
+            hideLoading();
+        }
+    }
+
     setupEventListeners();
     requestNotificationPermission();
 }
@@ -575,6 +626,8 @@ async function handleAuth(e) {
         if (!response.ok) throw new Error(data.error || 'Ошибка');
 
         state.user = data.user;
+        // Save user to localStorage for auto-login
+        localStorage.setItem('m_essenger_user', JSON.stringify(data.user));
         showApp();
     } catch (error) {
         showError(error.message);
@@ -587,7 +640,10 @@ function showError(message) {
 }
 
 function logout() {
-    // Complete state reset - no data persists
+    // Clear localStorage
+    localStorage.removeItem('m_essenger_user');
+
+    // Complete state reset
     state.user = null;
     state.conversations = [];
     state.currentConversation = null;
@@ -611,6 +667,9 @@ function logout() {
     elements.usernameInput.value = '';
     elements.chatList.innerHTML = '';
     elements.messagesContainer.innerHTML = '';
+
+    // Close chat on mobile
+    if (isMobile) closeChat();
 }
 
 // ==================== PROFILE ====================
@@ -712,7 +771,17 @@ function updateUserDisplay() {
 
 // ==================== SETTINGS ====================
 function openSettingsModal() {
-    loadMediaDevices();
+    // Hide device settings on mobile
+    if (isMobile) {
+        const micSection = elements.microphoneSelect?.closest('.modal-section');
+        const spkSection = elements.speakerSelect?.closest('.modal-section');
+        const camSection = elements.cameraSelect?.closest('.modal-section');
+        if (micSection) micSection.style.display = 'none';
+        if (spkSection) spkSection.style.display = 'none';
+        if (camSection) camSection.style.display = 'none';
+    } else {
+        loadMediaDevices();
+    }
     updateSettingsUI();
     elements.settingsModal.classList.remove('hidden');
 }
@@ -891,16 +960,26 @@ async function selectConversation(conversationId) {
     if (!conv) return;
 
     state.currentConversation = conv;
+    state.currentChannel = null;
+    state.currentGroup = null;
+
     elements.emptyState.classList.add('hidden');
     elements.chatWindow.classList.remove('hidden');
     elements.chatAvatar.textContent = (conv.other_username || 'U').charAt(0).toUpperCase();
+    elements.chatAvatar.style.background = ''; // Reset background
     elements.chatUsername.textContent = '@' + conv.other_username;
     elements.chatStatus.textContent = conv.other_status === 'online' ? 'В сети' : 'Не в сети';
+
+    // Show call buttons for private chats
+    document.querySelectorAll('.chat-header-actions .action-btn').forEach(btn => btn.style.display = '');
 
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
     document.querySelector(`[onclick="selectConversation('${conversationId}')"]`)?.classList.add('active');
 
     await loadMessages(conversationId);
+
+    // Open chat view on mobile with smooth animation
+    if (isMobile) openChat();
 }
 
 async function loadMessages(conversationId) {
@@ -1693,6 +1772,30 @@ window.closeDeleteAccountModal = closeDeleteAccountModal;
 window.confirmDeleteAccount = confirmDeleteAccount;
 window.saveRequiredUsername = saveRequiredUsername;
 
+// ==================== MOBILE NAVIGATION ====================
+// Open chat view with smooth slide animation
+function openChat() {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.classList.add('active');
+    }
+}
+
+// Close chat view and return to chat list
+function closeChat() {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.classList.remove('active');
+    }
+    // Clear current selection
+    state.currentConversation = null;
+    state.currentChannel = null;
+    state.currentGroup = null;
+}
+
+window.openChat = openChat;
+window.closeChat = closeChat;
+
 // ==================== CHANNELS & GROUPS ====================
 let currentTab = 'chats';
 
@@ -1807,6 +1910,9 @@ async function selectChannel(channelId) {
         // Update active state
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`[onclick="selectChannel('${channelId}')"]`)?.classList.add('active');
+
+        // Open chat on mobile
+        if (isMobile) openChat();
     } catch (error) {
         console.error('Select channel error:', error);
     }

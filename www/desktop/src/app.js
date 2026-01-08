@@ -1575,6 +1575,9 @@ async function acceptCall() {
 function rejectCall() {
     audioManager.stopRingtone();
     if (state.incomingCallData) {
+        // Add missed call to history
+        addCallToHistory('missed', state.incomingCallData.callerName, 0);
+
         state.ws.send(JSON.stringify({
             type: 'call_reject',
             callerId: state.incomingCallData.callerId,
@@ -1639,6 +1642,15 @@ function toggleVideo() {
 
 function endCall() {
     audioManager.stopRingtone();
+
+    // Calculate call duration and add to history
+    const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
+    const callUsername = state.currentConversation?.other_username || state.incomingCallData?.callerName;
+    const callType = state.incomingCallData ? 'incoming' : 'outgoing';
+    if (callUsername && duration > 0) {
+        addCallToHistory(callType, callUsername, duration);
+    }
+
     stopCallTimer();
     state.localStream?.getTracks().forEach(t => t.stop());
     state.peerConnection?.close();
@@ -1796,6 +1808,87 @@ function closeChat() {
 window.openChat = openChat;
 window.closeChat = closeChat;
 
+// ==================== CALL HISTORY ====================
+let callHistory = [];
+
+function loadCallHistory() {
+    const callsList = document.getElementById('calls-list');
+    if (!callsList) return;
+
+    if (callHistory.length === 0) {
+        callsList.innerHTML = `
+            <div class="empty-calls-message">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <p>Нет последних звонков</p>
+            </div>
+        `;
+    } else {
+        callsList.innerHTML = callHistory.map(call => renderCallHistoryItem(call)).join('');
+    }
+}
+
+function addCallToHistory(type, username, duration) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+    const durationStr = duration > 0
+        ? `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`
+        : '0:00';
+
+    callHistory.unshift({
+        type: type, // 'incoming', 'outgoing', 'missed'
+        username: username,
+        time: timeStr,
+        duration: durationStr,
+        timestamp: now.getTime()
+    });
+
+    // Keep only last 50 calls
+    if (callHistory.length > 50) {
+        callHistory = callHistory.slice(0, 50);
+    }
+
+    // Refresh if on calls tab
+    if (currentTab === 'calls') loadCallHistory();
+}
+
+function renderCallHistoryItem(call) {
+    const typeIcons = {
+        incoming: '📥',
+        outgoing: '📤',
+        missed: '❌'
+    };
+
+    const typeLabels = {
+        incoming: 'Входящий',
+        outgoing: 'Исходящий',
+        missed: 'Пропущенный'
+    };
+
+    const typeClass = `call-type-${call.type}`;
+
+    return `
+        <div class="call-history-item">
+            <div class="avatar">${(call.username || 'U').charAt(0).toUpperCase()}</div>
+            <div class="call-history-info">
+                <div class="call-history-name">@${call.username}</div>
+                <div class="call-history-details">
+                    <span class="${typeClass}">${typeIcons[call.type]} ${typeLabels[call.type]}</span>
+                    <span>•</span>
+                    <span>${call.time}</span>
+                    <span>•</span>
+                    <span>${call.duration}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.loadCallHistory = loadCallHistory;
+window.addCallToHistory = addCallToHistory;
+
 // ==================== CHANNELS & GROUPS ====================
 let currentTab = 'chats';
 
@@ -1806,14 +1899,22 @@ function switchTab(tab) {
     document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`)?.classList.add('active');
 
+    // Update bottom nav buttons
+    document.querySelectorAll('.nav-item').forEach((n, i) => {
+        const navTabs = ['chats', 'calls', 'settings'];
+        n.classList.toggle('active', navTabs[i] === tab);
+    });
+
     // Show/hide lists
     document.getElementById('chat-list')?.classList.toggle('hidden', tab !== 'chats');
     document.getElementById('channel-list')?.classList.toggle('hidden', tab !== 'channels');
     document.getElementById('group-list')?.classList.toggle('hidden', tab !== 'groups');
+    document.getElementById('calls-list')?.classList.toggle('hidden', tab !== 'calls');
 
     // Load data
     if (tab === 'channels') loadChannels();
     else if (tab === 'groups') loadGroups();
+    else if (tab === 'calls') loadCallHistory();
 }
 
 async function loadChannels() {

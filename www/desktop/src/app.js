@@ -993,14 +993,33 @@ async function loadMessages(conversationId) {
 }
 
 function renderMessages() {
-    elements.messagesContainer.innerHTML = state.messages.map(msg => {
+    let html = '';
+    let lastDate = null;
+
+    state.messages.forEach((msg, index) => {
         // FIX: Check both sender_id and senderId for compatibility
         const senderId = msg.sender_id || msg.senderId;
         const isSent = senderId === state.user.id;
         const isGif = msg.type === 'gif';
         const isVoice = msg.type === 'voice';
-        const time = formatMessageTime(msg.created_at || msg.createdAt);
+        const msgTime = msg.created_at || msg.createdAt;
+        const time = formatMessageTime(msgTime);
         const msgId = msg.id || Math.random().toString(36).substr(2, 9);
+        const isPending = msg.pending === true;
+        const isRead = msg.is_read || msg.isRead || false;
+
+        // Date separator logic
+        const msgDate = new Date(msgTime);
+        const dateStr = msgDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+        const dateKey = msgDate.toDateString();
+
+        if (lastDate !== dateKey) {
+            html += `
+            <div class="date-separator">
+                <span class="date-separator-text">${dateStr}</span>
+            </div>`;
+            lastDate = dateKey;
+        }
 
         let content;
         if (isGif) {
@@ -1030,27 +1049,61 @@ function renderMessages() {
             content = `<div class="message-bubble">${escapeHtml(msg.content)}</div>`;
         }
 
-        return `
-      <div class="message ${isSent ? 'sent' : 'received'}">
+        // Read receipts - 3 checkmarks for sent messages
+        let statusHtml = '';
+        if (isSent) {
+            const statusClass = isRead ? 'read' : 'unread';
+            statusHtml = `<span class="message-status ${statusClass}">
+                <span class="checkmark">✓</span>
+                <span class="checkmark">✓</span>
+                <span class="checkmark">✓</span>
+            </span>`;
+        }
+
+        const pendingClass = isPending ? 'pending' : '';
+
+        html += `
+      <div class="message ${isSent ? 'sent' : 'received'} ${pendingClass}" data-msg-id="${msgId}">
         ${content}
-        <span class="message-time">${time}</span>
+        <span class="message-time">${time}${statusHtml}</span>
       </div>
     `;
-    }).join('');
+    });
 
+    elements.messagesContainer.innerHTML = html;
     elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
 }
+
 
 function handleNewMessage(message) {
     // Normalize the message format
     const normalizedMessage = {
         ...message,
         sender_id: message.sender_id || message.senderId,
-        created_at: message.created_at || message.createdAt || new Date().toISOString()
+        created_at: message.created_at || message.createdAt || new Date().toISOString(),
+        pending: false,
+        is_read: message.is_read || false
     };
 
     if (state.currentConversation && (message.conversationId === state.currentConversation.id || message.conversation_id === state.currentConversation.id)) {
-        state.messages.push(normalizedMessage);
+        // Check if this is a confirmation for a pending message
+        const tempId = message.tempId;
+        const senderId = message.sender_id || message.senderId;
+        const isOwnMessage = senderId === state.user.id;
+
+        if (isOwnMessage && tempId) {
+            // Remove the pending version and add confirmed version
+            const pendingIndex = state.messages.findIndex(m => m.id === tempId);
+            if (pendingIndex !== -1) {
+                state.messages.splice(pendingIndex, 1);
+            }
+        }
+
+        // Only add if not already present (prevent duplicates)
+        const exists = state.messages.some(m => m.id === message.id);
+        if (!exists) {
+            state.messages.push(normalizedMessage);
+        }
         renderMessages();
     }
 
@@ -1062,6 +1115,7 @@ function handleNewMessage(message) {
 
     loadConversations();
 }
+
 
 // ==================== SEARCH ====================
 async function handleSearch() {
@@ -1141,6 +1195,18 @@ function sendMessage(content = null, type = 'text') {
     const messageContent = content || elements.messageInput.value.trim();
     if (!messageContent) return;
 
+    // Create pending message for immediate UI feedback
+    const tempId = 'pending-' + Date.now();
+    const pendingMessage = {
+        id: tempId,
+        sender_id: state.user.id,
+        content: messageContent,
+        type: type,
+        created_at: new Date().toISOString(),
+        pending: true,
+        is_read: false
+    };
+
     // Check what context we're in
     if (state.currentChannel) {
         // Send to channel via HTTP (only admins can post)
@@ -1149,13 +1215,18 @@ function sendMessage(content = null, type = 'text') {
         // Send to group via WebSocket
         sendGroupMessage(messageContent, type);
     } else if (state.currentConversation && state.ws) {
+        // Add pending message to UI immediately
+        state.messages.push(pendingMessage);
+        renderMessages();
+
         // Private message via WebSocket
         state.ws.send(JSON.stringify({
             type: 'message',
             conversationId: state.currentConversation.id,
             senderId: state.user.id,
             content: messageContent,
-            messageType: type
+            messageType: type,
+            tempId: tempId
         }));
     } else {
         return;
@@ -1165,6 +1236,7 @@ function sendMessage(content = null, type = 'text') {
     elements.messageInput.style.height = 'auto';
     elements.sendBtn.disabled = true;
 }
+
 
 async function sendChannelMessage(content, type = 'text') {
     if (!state.currentChannel) return;
@@ -1421,14 +1493,34 @@ const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 async function startCall(isVideo) {
     if (!state.currentConversation || state.isInCall) return;
 
+    // Check WebSocket connection first
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        showToast('Нет подключения к серверу', 'error', 'Ошибка');
+        return;
+    }
+
     // Allow calling offline users - check done on server/peer level, not client
     // if (state.currentConversation.other_status !== 'online') ... removed restriction
 
     try {
-        state.localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: isVideo
-        });
+        // Request media access with specific error handling
+        try {
+            state.localStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: isVideo
+            });
+        } catch (mediaError) {
+            console.error('Media access error:', mediaError);
+            if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+                showToast(isVideo ? 'Доступ к камере и микрофону запрещён' : 'Доступ к микрофону запрещён', 'error', 'Нет доступа');
+            } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+                showToast(isVideo ? 'Камера или микрофон не найдены' : 'Микрофон не найден', 'error', 'Устройство не найдено');
+            } else {
+                showToast('Не удалось получить доступ к устройствам', 'error', 'Ошибка');
+            }
+            return;
+        }
+
         state.isInCall = true;
         state.isVideoEnabled = isVideo;
 
@@ -1458,15 +1550,23 @@ async function startCall(isVideo) {
         setTimeout(() => {
             if (state.isInCall && elements.callStatus.textContent === 'Звоним...') {
                 showToast('Абонент не отвечает', 'warning');
-                handleCallError('Нет ответа');
+                handleCallError('Нет ответа', true);
             }
         }, 60000);
 
     } catch (error) {
         console.error('Start call error:', error);
-        handleCallError('Ошибка соединения');
+        // Clean up if partially started
+        if (state.localStream) {
+            state.localStream.getTracks().forEach(t => t.stop());
+            state.localStream = null;
+        }
+        state.isInCall = false;
+        showToast('Не удалось начать звонок', 'error', 'Ошибка звонка');
+        endCall();
     }
 }
+
 
 function createPeerConnection() {
     state.peerConnection = new RTCPeerConnection(rtcConfig);

@@ -1903,6 +1903,39 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Manual permission request function for settings button
+async function requestCameraAndMic() {
+    try {
+        showToast('Запрашиваем разрешения...', 'info', 'Разрешения');
+
+        // Request camera + microphone
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+        stream.getTracks().forEach(track => track.stop());
+        showToast('Камера и микрофон разрешены!', 'success', 'Готово');
+    } catch (e) {
+        console.warn('Camera permission failed:', e.name);
+
+        // Try audio only
+        try {
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStream.getTracks().forEach(track => track.stop());
+            showToast('Микрофон разрешён!', 'success', 'Готово');
+        } catch (audioErr) {
+            console.error('Audio permission denied:', audioErr.name);
+            if (audioErr.name === 'NotAllowedError') {
+                showToast('Разрешение отклонено. Откройте настройки iOS > M-essenger и включите камеру/микрофон', 'error', 'Ошибка');
+            } else if (audioErr.name === 'NotFoundError') {
+                showToast('Микрофон не найден на устройстве', 'error', 'Ошибка');
+            } else {
+                showToast('Не удалось получить доступ к устройствам', 'error', 'Ошибка');
+            }
+        }
+    }
+}
+
 // Global exports
 window.selectConversation = selectConversation;
 window.startConversationWith = startConversationWith;
@@ -1922,6 +1955,8 @@ window.deleteAccount = deleteAccount;
 window.closeDeleteAccountModal = closeDeleteAccountModal;
 window.confirmDeleteAccount = confirmDeleteAccount;
 window.saveRequiredUsername = saveRequiredUsername;
+window.requestCameraAndMic = requestCameraAndMic;
+
 
 // ==================== MOBILE NAVIGATION ====================
 // Open chat view with smooth slide animation

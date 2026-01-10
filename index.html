@@ -1986,6 +1986,17 @@
                 <button class="modal-close" onclick="closeSettingsModal()">×</button>
             </div>
             <div class="modal-body">
+                <!-- Permission Request Button for Mobile -->
+                <div class="modal-section mobile-only" id="permissions-section">
+                    <div class="modal-section-title">Разрешения</div>
+                    <button class="btn btn-primary" onclick="requestCameraAndMic()"
+                        style="width: 100%; margin-bottom: 8px;">
+                        🎤 Запросить микрофон и камеру
+                    </button>
+                    <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Нажмите, чтобы разрешить доступ к
+                        камере и микрофону для звонков</p>
+                </div>
+
                 <div class="modal-section">
                     <div class="modal-section-title">Звуки</div>
                     <div class="toggle-container">

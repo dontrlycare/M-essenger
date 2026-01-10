@@ -92,11 +92,11 @@
         display: none !important;
     }
 
-    /* Mobile Header - search and profile - УВЕЛИЧЕННЫЙ отступ (3.5см от верха) */
+    /* Mobile Header - search and profile - УВЕЛИЧЕННЫЙ отступ (4см от верха) */
     .sidebar-header {
         display: flex !important;
         padding: 12px 16px;
-        padding-top: calc(110px + env(safe-area-inset-top));
+        padding-top: calc(125px + env(safe-area-inset-top));
         background: var(--mobile-header);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -243,13 +243,13 @@
         transform: translateX(0);
     }
 
-    /* Chat Header - УВЕЛИЧЕННЫЙ отступ (3.5см от верха) */
+    /* Chat Header - УВЕЛИЧЕННЫЙ отступ (4см от верха) */
     .chat-header-bar {
         background-color: var(--mobile-header);
         padding: 10px 16px;
-        padding-top: calc(110px + env(safe-area-inset-top));
+        padding-top: calc(125px + env(safe-area-inset-top));
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        min-height: 130px;
+        min-height: 145px;
         height: auto;
     }
 
@@ -290,10 +290,10 @@
         line-height: 1.4;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         min-width: 60px;
-        max-width: calc(50ch);
+        max-width: min(85vw, 50ch);
         word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
         white-space: pre-wrap;
         hyphens: auto;
     }
@@ -400,14 +400,14 @@
         margin: 10px;
     }
 
-    /* Safe area insets for iOS - FIXED position above bottom nav */
+    /* Safe area insets for iOS - FIXED position flush with bottom nav */
     .message-input-container {
         position: fixed !important;
-        bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+        bottom: calc(56px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
-        padding: 12px 16px;
-        padding-bottom: 14px;
+        padding: 10px 16px;
+        padding-bottom: 10px;
         display: block !important;
         background: var(--mobile-header);
         z-index: 100;
@@ -421,11 +421,11 @@
         opacity: 1 !important;
     }
 
-    /* Messages container needs proper height - more bottom space for fixed input */
+    /* Messages container needs proper height - space for fixed input */
     .main-content.active .messages-container {
         flex: 1;
         overflow-y: auto;
-        padding-bottom: 200px;
+        padding-bottom: 160px;
         margin-bottom: 0;
     }
 

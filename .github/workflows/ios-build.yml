@@ -34,6 +34,21 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
+      - name: Add Permission Descriptions to Info.plist
+        run: |
+          PLIST_PATH="ios/App/App/Info.plist"
+          # Camera permission
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'This app needs access to camera for video calls'" "$PLIST_PATH" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription 'This app needs access to camera for video calls'" "$PLIST_PATH"
+          # Microphone permission
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'This app needs access to microphone for voice and video calls'" "$PLIST_PATH" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription 'This app needs access to microphone for voice and video calls'" "$PLIST_PATH"
+          # Photo Library permission (for sending photos)
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'This app needs access to photo library to send photos'" "$PLIST_PATH" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 'This app needs access to photo library to send photos'" "$PLIST_PATH"
+          echo "Permissions added to Info.plist:"
+          cat "$PLIST_PATH"
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:

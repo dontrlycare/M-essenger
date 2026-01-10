@@ -690,6 +690,10 @@ function logout() {
     state.isVideoEnabled = true;
     state.incomingCallData = null;
 
+    // Close all modals first
+    closeProfileModal();
+    closeSettingsModal();
+
     // Reset UI
     elements.loginScreen.classList.remove('hidden');
     elements.appScreen.classList.add('hidden');
@@ -964,9 +968,12 @@ function handleWebSocketMessage(data) {
             handleCallError(data.error);
             break;
         case 'call_pending':
-            // User was offline, they'll get notification when online
+            // User was offline - show message but keep call UI open, waiting for them to come online
             showToast(data.message, 'info', 'Звонок');
-            handleCallError('Пользователь офлайн', true);
+            // Update call status but DON'T end the call - wait for user to come online or timeout
+            if (elements.callStatus) {
+                elements.callStatus.textContent = 'Ожидание...';
+            }
             break;
         case 'pending_calls':
             // Received missed calls from when we were offline
@@ -1058,33 +1065,14 @@ async function loadMessages(conversationId) {
 }
 
 function renderMessages() {
-    let html = '';
-    let lastDate = null;
-
-    state.messages.forEach((msg, index) => {
+    elements.messagesContainer.innerHTML = state.messages.map(msg => {
         // FIX: Check both sender_id and senderId for compatibility
         const senderId = msg.sender_id || msg.senderId;
         const isSent = senderId === state.user.id;
         const isGif = msg.type === 'gif';
         const isVoice = msg.type === 'voice';
-        const msgTime = msg.created_at || msg.createdAt;
-        const time = formatMessageTime(msgTime);
+        const time = formatMessageTime(msg.created_at || msg.createdAt);
         const msgId = msg.id || Math.random().toString(36).substr(2, 9);
-        const isPending = msg.pending === true;
-        const isRead = msg.is_read || msg.isRead || false;
-
-        // Date separator logic
-        const msgDate = new Date(msgTime);
-        const dateStr = msgDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-        const dateKey = msgDate.toDateString();
-
-        if (lastDate !== dateKey) {
-            html += `
-            <div class="date-separator">
-                <span class="date-separator-text">${dateStr}</span>
-            </div>`;
-            lastDate = dateKey;
-        }
 
         let content;
         if (isGif) {
@@ -1114,31 +1102,19 @@ function renderMessages() {
             content = `<div class="message-bubble">${escapeHtml(msg.content)}</div>`;
         }
 
-        // Read receipts - 3 checkmarks for sent messages
-        let statusHtml = '';
-        if (isSent) {
-            const statusClass = isRead ? 'read' : 'unread';
-            statusHtml = `<span class="message-status ${statusClass}">
-                <span class="checkmark">✓</span>
-                <span class="checkmark">✓</span>
-                <span class="checkmark">✓</span>
-            </span>`;
-        }
+        // Add pending class for semi-transparent optimistic messages
+        const pendingClass = msg.pending ? 'pending' : '';
 
-        const pendingClass = isPending ? 'pending' : '';
-
-        html += `
-      <div class="message ${isSent ? 'sent' : 'received'} ${pendingClass}" data-msg-id="${msgId}">
+        return `
+      <div class="message ${isSent ? 'sent' : 'received'} ${pendingClass}">
         ${content}
-        <span class="message-time">${time}${statusHtml}</span>
+        <span class="message-time">${time}</span>
       </div>
     `;
-    });
+    }).join('');
 
-    elements.messagesContainer.innerHTML = html;
     elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
 }
-
 
 function handleNewMessage(message) {
     // Normalize the message format
@@ -1146,41 +1122,39 @@ function handleNewMessage(message) {
         ...message,
         sender_id: message.sender_id || message.senderId,
         created_at: message.created_at || message.createdAt || new Date().toISOString(),
-        pending: false,
-        is_read: message.is_read || false
+        pending: false  // Confirmed by server
     };
 
+    const senderId = message.sender_id || message.senderId;
+    const isOwnMessage = senderId === state.user.id;
+
     if (state.currentConversation && (message.conversationId === state.currentConversation.id || message.conversation_id === state.currentConversation.id)) {
-        // Check if this is a confirmation for a pending message
-        const tempId = message.tempId;
-        const senderId = message.sender_id || message.senderId;
-        const isOwnMessage = senderId === state.user.id;
-
-        if (isOwnMessage && tempId) {
-            // Remove the pending version and add confirmed version
-            const pendingIndex = state.messages.findIndex(m => m.id === tempId);
+        if (isOwnMessage) {
+            // Replace pending message with confirmed one (find by content and sender)
+            const pendingIndex = state.messages.findIndex(m =>
+                m.pending && m.sender_id === senderId && m.content === message.content
+            );
             if (pendingIndex !== -1) {
-                state.messages.splice(pendingIndex, 1);
+                // Replace pending message with confirmed
+                state.messages[pendingIndex] = normalizedMessage;
+            } else {
+                // No pending message found, just add (edge case)
+                state.messages.push(normalizedMessage);
             }
-        }
-
-        // Only add if not already present (prevent duplicates)
-        const exists = state.messages.some(m => m.id === message.id);
-        if (!exists) {
+        } else {
+            // Received message from other user
             state.messages.push(normalizedMessage);
         }
         renderMessages();
     }
 
-    // Play sound only for received messages
-    const senderId = message.sender_id || message.senderId;
-    if (senderId !== state.user.id) {
+    // Play sound only for received messages (not own)
+    if (!isOwnMessage) {
         audioManager.playMessageSound();
     }
 
     loadConversations();
 }
-
 
 // ==================== SEARCH ====================
 async function handleSearch() {
@@ -1260,17 +1234,8 @@ function sendMessage(content = null, type = 'text') {
     const messageContent = content || elements.messageInput.value.trim();
     if (!messageContent) return;
 
-    // Create pending message for immediate UI feedback
-    const tempId = 'pending-' + Date.now();
-    const pendingMessage = {
-        id: tempId,
-        sender_id: state.user.id,
-        content: messageContent,
-        type: type,
-        created_at: new Date().toISOString(),
-        pending: true,
-        is_read: false
-    };
+    // Generate temporary ID for optimistic update
+    const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
     // Check what context we're in
     if (state.currentChannel) {
@@ -1280,18 +1245,26 @@ function sendMessage(content = null, type = 'text') {
         // Send to group via WebSocket
         sendGroupMessage(messageContent, type);
     } else if (state.currentConversation && state.ws) {
-        // Add pending message to UI immediately
+        // Optimistic UI: Add message immediately as pending (no loading screen)
+        const pendingMessage = {
+            id: tempId,
+            sender_id: state.user.id,
+            content: messageContent,
+            type: type,
+            created_at: new Date().toISOString(),
+            pending: true  // Mark as pending
+        };
         state.messages.push(pendingMessage);
         renderMessages();
 
-        // Private message via WebSocket
+        // Send via WebSocket
         state.ws.send(JSON.stringify({
             type: 'message',
             conversationId: state.currentConversation.id,
             senderId: state.user.id,
             content: messageContent,
             messageType: type,
-            tempId: tempId
+            tempId: tempId  // Send tempId for matching
         }));
     } else {
         return;
@@ -1301,7 +1274,6 @@ function sendMessage(content = null, type = 'text') {
     elements.messageInput.style.height = 'auto';
     elements.sendBtn.disabled = true;
 }
-
 
 async function sendChannelMessage(content, type = 'text') {
     if (!state.currentChannel) return;
@@ -1659,7 +1631,6 @@ async function startCall(isVideo) {
     }
 }
 
-
 function createPeerConnection() {
     state.peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -1706,12 +1677,29 @@ function createPeerConnection() {
     };
 
     state.peerConnection.ontrack = (e) => {
+        console.log('Received remote track:', e.track.kind);
+
+        // CRITICAL: Always connect the remote stream to play audio
+        // For video calls, use the video element
+        // For voice calls, use an audio element
         if (state.isVideoEnabled) {
             elements.remoteVideo.srcObject = e.streams[0];
             elements.callVideoContainer.classList.remove('hidden');
             elements.callConnecting.classList.add('hidden');
             elements.callOverlay.classList.remove('connecting');
         } else {
+            // Voice call - create/use audio element for remote audio playback
+            let remoteAudio = document.getElementById('remote-audio');
+            if (!remoteAudio) {
+                remoteAudio = document.createElement('audio');
+                remoteAudio.id = 'remote-audio';
+                remoteAudio.autoplay = true;
+                remoteAudio.playsInline = true;
+                document.body.appendChild(remoteAudio);
+            }
+            remoteAudio.srcObject = e.streams[0];
+            remoteAudio.play().catch(err => console.warn('Audio play error:', err));
+
             // Voice call connected - show waves animation and timer
             elements.callStatus.textContent = 'Подключено';
             const voiceWaves = document.getElementById('voice-waves');
@@ -1799,9 +1787,6 @@ async function acceptCall() {
 function rejectCall() {
     audioManager.stopRingtone();
     if (state.incomingCallData) {
-        // Add missed call to history
-        addCallToHistory('missed', state.incomingCallData.callerName, 0);
-
         state.ws.send(JSON.stringify({
             type: 'call_reject',
             callerId: state.incomingCallData.callerId,
@@ -1866,15 +1851,6 @@ function toggleVideo() {
 
 function endCall() {
     audioManager.stopRingtone();
-
-    // Calculate call duration and add to history
-    const duration = callStartTime ? Math.floor((Date.now() - callStartTime) / 1000) : 0;
-    const callUsername = state.currentConversation?.other_username || state.incomingCallData?.callerName;
-    const callType = state.incomingCallData ? 'incoming' : 'outgoing';
-    if (callUsername && duration > 0) {
-        addCallToHistory(callType, callUsername, duration);
-    }
-
     stopCallTimer();
     state.localStream?.getTracks().forEach(t => t.stop());
     state.peerConnection?.close();
@@ -1898,6 +1874,13 @@ function endCall() {
     if (callTimer) {
         callTimer.classList.add('hidden');
         callTimer.textContent = '0:00';
+    }
+
+    // Cleanup remote audio element for voice calls
+    const remoteAudio = document.getElementById('remote-audio');
+    if (remoteAudio) {
+        remoteAudio.srcObject = null;
+        remoteAudio.remove();
     }
 
     state.localStream = null;
@@ -1988,26 +1971,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Global exports
-window.selectConversation = selectConversation;
-window.startConversationWith = startConversationWith;
-window.sendGif = sendGif;
-window.logout = logout;
-window.openProfileModal = openProfileModal;
-window.closeProfileModal = closeProfileModal;
-window.saveProfile = saveProfile;
-window.openSettingsModal = openSettingsModal;
-window.closeSettingsModal = closeSettingsModal;
-window.toggleSetting = toggleSetting;
-window.saveSettings = saveSettings;
-window.playVoice = playVoice;
-window.playVoiceMessage = playVoiceMessage;
-window.seekVoice = seekVoice;
-window.deleteAccount = deleteAccount;
-window.closeDeleteAccountModal = closeDeleteAccountModal;
-window.confirmDeleteAccount = confirmDeleteAccount;
-window.saveRequiredUsername = saveRequiredUsername;
-
 // Manual permission request function for settings button
 async function requestCameraAndMic() {
     try {
@@ -2040,6 +2003,26 @@ async function requestCameraAndMic() {
         }
     }
 }
+
+// Global exports
+window.selectConversation = selectConversation;
+window.startConversationWith = startConversationWith;
+window.sendGif = sendGif;
+window.logout = logout;
+window.openProfileModal = openProfileModal;
+window.closeProfileModal = closeProfileModal;
+window.saveProfile = saveProfile;
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.toggleSetting = toggleSetting;
+window.saveSettings = saveSettings;
+window.playVoice = playVoice;
+window.playVoiceMessage = playVoiceMessage;
+window.seekVoice = seekVoice;
+window.deleteAccount = deleteAccount;
+window.closeDeleteAccountModal = closeDeleteAccountModal;
+window.confirmDeleteAccount = confirmDeleteAccount;
+window.saveRequiredUsername = saveRequiredUsername;
 window.requestCameraAndMic = requestCameraAndMic;
 
 
@@ -2067,87 +2050,6 @@ function closeChat() {
 window.openChat = openChat;
 window.closeChat = closeChat;
 
-// ==================== CALL HISTORY ====================
-let callHistory = [];
-
-function loadCallHistory() {
-    const callsList = document.getElementById('calls-list');
-    if (!callsList) return;
-
-    if (callHistory.length === 0) {
-        callsList.innerHTML = `
-            <div class="empty-calls-message">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
-                <p>Нет последних звонков</p>
-            </div>
-        `;
-    } else {
-        callsList.innerHTML = callHistory.map(call => renderCallHistoryItem(call)).join('');
-    }
-}
-
-function addCallToHistory(type, username, duration) {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-    const durationStr = duration > 0
-        ? `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`
-        : '0:00';
-
-    callHistory.unshift({
-        type: type, // 'incoming', 'outgoing', 'missed'
-        username: username,
-        time: timeStr,
-        duration: durationStr,
-        timestamp: now.getTime()
-    });
-
-    // Keep only last 50 calls
-    if (callHistory.length > 50) {
-        callHistory = callHistory.slice(0, 50);
-    }
-
-    // Refresh if on calls tab
-    if (currentTab === 'calls') loadCallHistory();
-}
-
-function renderCallHistoryItem(call) {
-    const typeIcons = {
-        incoming: '📥',
-        outgoing: '📤',
-        missed: '❌'
-    };
-
-    const typeLabels = {
-        incoming: 'Входящий',
-        outgoing: 'Исходящий',
-        missed: 'Пропущенный'
-    };
-
-    const typeClass = `call-type-${call.type}`;
-
-    return `
-        <div class="call-history-item">
-            <div class="avatar">${(call.username || 'U').charAt(0).toUpperCase()}</div>
-            <div class="call-history-info">
-                <div class="call-history-name">@${call.username}</div>
-                <div class="call-history-details">
-                    <span class="${typeClass}">${typeIcons[call.type]} ${typeLabels[call.type]}</span>
-                    <span>•</span>
-                    <span>${call.time}</span>
-                    <span>•</span>
-                    <span>${call.duration}</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-window.loadCallHistory = loadCallHistory;
-window.addCallToHistory = addCallToHistory;
-
 // ==================== CHANNELS & GROUPS ====================
 let currentTab = 'chats';
 
@@ -2158,22 +2060,14 @@ function switchTab(tab) {
     document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`tab-${tab}`)?.classList.add('active');
 
-    // Update bottom nav buttons
-    document.querySelectorAll('.nav-item').forEach((n, i) => {
-        const navTabs = ['chats', 'calls', 'settings'];
-        n.classList.toggle('active', navTabs[i] === tab);
-    });
-
     // Show/hide lists
     document.getElementById('chat-list')?.classList.toggle('hidden', tab !== 'chats');
     document.getElementById('channel-list')?.classList.toggle('hidden', tab !== 'channels');
     document.getElementById('group-list')?.classList.toggle('hidden', tab !== 'groups');
-    document.getElementById('calls-list')?.classList.toggle('hidden', tab !== 'calls');
 
     // Load data
     if (tab === 'channels') loadChannels();
     else if (tab === 'groups') loadGroups();
-    else if (tab === 'calls') loadCallHistory();
 }
 
 async function loadChannels() {

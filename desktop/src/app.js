@@ -690,6 +690,10 @@ function logout() {
     state.isVideoEnabled = true;
     state.incomingCallData = null;
 
+    // Close all modals first
+    closeProfileModal();
+    closeSettingsModal();
+
     // Reset UI
     elements.loginScreen.classList.remove('hidden');
     elements.appScreen.classList.add('hidden');
@@ -964,9 +968,12 @@ function handleWebSocketMessage(data) {
             handleCallError(data.error);
             break;
         case 'call_pending':
-            // User was offline, they'll get notification when online
+            // User was offline - show message but keep call UI open, waiting for them to come online
             showToast(data.message, 'info', 'Звонок');
-            handleCallError('Пользователь офлайн', true);
+            // Update call status but DON'T end the call - wait for user to come online or timeout
+            if (elements.callStatus) {
+                elements.callStatus.textContent = 'Ожидание...';
+            }
             break;
         case 'pending_calls':
             // Received missed calls from when we were offline
@@ -1095,8 +1102,11 @@ function renderMessages() {
             content = `<div class="message-bubble">${escapeHtml(msg.content)}</div>`;
         }
 
+        // Add pending class for semi-transparent optimistic messages
+        const pendingClass = msg.pending ? 'pending' : '';
+
         return `
-      <div class="message ${isSent ? 'sent' : 'received'}">
+      <div class="message ${isSent ? 'sent' : 'received'} ${pendingClass}">
         ${content}
         <span class="message-time">${time}</span>
       </div>
@@ -1111,17 +1121,35 @@ function handleNewMessage(message) {
     const normalizedMessage = {
         ...message,
         sender_id: message.sender_id || message.senderId,
-        created_at: message.created_at || message.createdAt || new Date().toISOString()
+        created_at: message.created_at || message.createdAt || new Date().toISOString(),
+        pending: false  // Confirmed by server
     };
 
+    const senderId = message.sender_id || message.senderId;
+    const isOwnMessage = senderId === state.user.id;
+
     if (state.currentConversation && (message.conversationId === state.currentConversation.id || message.conversation_id === state.currentConversation.id)) {
-        state.messages.push(normalizedMessage);
+        if (isOwnMessage) {
+            // Replace pending message with confirmed one (find by content and sender)
+            const pendingIndex = state.messages.findIndex(m =>
+                m.pending && m.sender_id === senderId && m.content === message.content
+            );
+            if (pendingIndex !== -1) {
+                // Replace pending message with confirmed
+                state.messages[pendingIndex] = normalizedMessage;
+            } else {
+                // No pending message found, just add (edge case)
+                state.messages.push(normalizedMessage);
+            }
+        } else {
+            // Received message from other user
+            state.messages.push(normalizedMessage);
+        }
         renderMessages();
     }
 
-    // Play sound only for received messages
-    const senderId = message.sender_id || message.senderId;
-    if (senderId !== state.user.id) {
+    // Play sound only for received messages (not own)
+    if (!isOwnMessage) {
         audioManager.playMessageSound();
     }
 
@@ -1206,6 +1234,9 @@ function sendMessage(content = null, type = 'text') {
     const messageContent = content || elements.messageInput.value.trim();
     if (!messageContent) return;
 
+    // Generate temporary ID for optimistic update
+    const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
     // Check what context we're in
     if (state.currentChannel) {
         // Send to channel via HTTP (only admins can post)
@@ -1214,13 +1245,26 @@ function sendMessage(content = null, type = 'text') {
         // Send to group via WebSocket
         sendGroupMessage(messageContent, type);
     } else if (state.currentConversation && state.ws) {
-        // Private message via WebSocket
+        // Optimistic UI: Add message immediately as pending (no loading screen)
+        const pendingMessage = {
+            id: tempId,
+            sender_id: state.user.id,
+            content: messageContent,
+            type: type,
+            created_at: new Date().toISOString(),
+            pending: true  // Mark as pending
+        };
+        state.messages.push(pendingMessage);
+        renderMessages();
+
+        // Send via WebSocket
         state.ws.send(JSON.stringify({
             type: 'message',
             conversationId: state.currentConversation.id,
             senderId: state.user.id,
             content: messageContent,
-            messageType: type
+            messageType: type,
+            tempId: tempId  // Send tempId for matching
         }));
     } else {
         return;
@@ -1633,12 +1677,29 @@ function createPeerConnection() {
     };
 
     state.peerConnection.ontrack = (e) => {
+        console.log('Received remote track:', e.track.kind);
+
+        // CRITICAL: Always connect the remote stream to play audio
+        // For video calls, use the video element
+        // For voice calls, use an audio element
         if (state.isVideoEnabled) {
             elements.remoteVideo.srcObject = e.streams[0];
             elements.callVideoContainer.classList.remove('hidden');
             elements.callConnecting.classList.add('hidden');
             elements.callOverlay.classList.remove('connecting');
         } else {
+            // Voice call - create/use audio element for remote audio playback
+            let remoteAudio = document.getElementById('remote-audio');
+            if (!remoteAudio) {
+                remoteAudio = document.createElement('audio');
+                remoteAudio.id = 'remote-audio';
+                remoteAudio.autoplay = true;
+                remoteAudio.playsInline = true;
+                document.body.appendChild(remoteAudio);
+            }
+            remoteAudio.srcObject = e.streams[0];
+            remoteAudio.play().catch(err => console.warn('Audio play error:', err));
+
             // Voice call connected - show waves animation and timer
             elements.callStatus.textContent = 'Подключено';
             const voiceWaves = document.getElementById('voice-waves');
@@ -1813,6 +1874,13 @@ function endCall() {
     if (callTimer) {
         callTimer.classList.add('hidden');
         callTimer.textContent = '0:00';
+    }
+
+    // Cleanup remote audio element for voice calls
+    const remoteAudio = document.getElementById('remote-audio');
+    if (remoteAudio) {
+        remoteAudio.srcObject = null;
+        remoteAudio.remove();
     }
 
     state.localStream = null;

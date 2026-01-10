@@ -92,11 +92,11 @@
         display: none !important;
     }
 
-    /* Mobile Header - search and profile - УВЕЛИЧЕННЫЙ отступ (4см от верха) */
+    /* Mobile Header - search and profile */
     .sidebar-header {
         display: flex !important;
         padding: 12px 16px;
-        padding-top: calc(125px + env(safe-area-inset-top));
+        padding-top: calc(50px + env(safe-area-inset-top));
         background: var(--mobile-header);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -243,13 +243,13 @@
         transform: translateX(0);
     }
 
-    /* Chat Header - УВЕЛИЧЕННЫЙ отступ (4см от верха) */
+    /* Chat Header */
     .chat-header-bar {
         background-color: var(--mobile-header);
         padding: 10px 16px;
-        padding-top: calc(125px + env(safe-area-inset-top));
+        padding-top: calc(50px + env(safe-area-inset-top));
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        min-height: 145px;
+        min-height: 100px;
         height: auto;
     }
 

@@ -575,6 +575,15 @@
             border-bottom-left-radius: 4px;
         }
 
+        /* Pending message - semi-transparent until confirmed */
+        .message.pending {
+            opacity: 0.5;
+        }
+
+        .message.pending .message-bubble {
+            opacity: 1;
+        }
+
         .message-time {
             font-size: 11px;
             color: var(--text-muted);

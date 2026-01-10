@@ -1488,7 +1488,34 @@ function sendGif(url) {
 }
 
 // ==================== CALLS ====================
-const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const rtcConfig = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'stun:stun.stunprotocol.org:3478' },
+        // Free TURN servers from OpenRelay (for NAT traversal)
+        {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+        },
+        {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+        },
+        {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+        }
+    ],
+    iceCandidatePoolSize: 10
+};
 
 async function startCall(isVideo) {
     if (!state.currentConversation || state.isInCall) return;
@@ -1572,7 +1599,7 @@ function createPeerConnection() {
     state.peerConnection = new RTCPeerConnection(rtcConfig);
 
     state.peerConnection.onicecandidate = (e) => {
-        if (e.candidate) {
+        if (e.candidate && state.ws && state.ws.readyState === WebSocket.OPEN) {
             state.ws.send(JSON.stringify({
                 type: 'ice_candidate',
                 candidate: e.candidate,
@@ -1580,6 +1607,37 @@ function createPeerConnection() {
                 fromUserId: state.user.id
             }));
         }
+    };
+
+    // Monitor ICE connection state for better error handling
+    state.peerConnection.oniceconnectionstatechange = () => {
+        const iceState = state.peerConnection.iceConnectionState;
+        console.log('ICE connection state:', iceState);
+
+        switch (iceState) {
+            case 'connected':
+            case 'completed':
+                // Connection established successfully
+                elements.callStatus.textContent = 'Подключено';
+                audioManager.stopRingtone();
+                break;
+            case 'disconnected':
+                elements.callStatus.textContent = 'Переподключение...';
+                break;
+            case 'failed':
+                console.error('ICE connection failed');
+                showToast('Не удалось установить соединение', 'error', 'Ошибка связи');
+                endCall();
+                break;
+            case 'closed':
+                // Connection closed, cleanup handled in endCall
+                break;
+        }
+    };
+
+    // Handle ICE candidate errors (for debugging)
+    state.peerConnection.onicecandidateerror = (event) => {
+        console.warn('ICE candidate error:', event.errorCode, event.errorText);
     };
 
     state.peerConnection.ontrack = (e) => {
@@ -1602,6 +1660,7 @@ function createPeerConnection() {
         audioManager.stopRingtone();
     };
 }
+
 
 let callTimerInterval = null;
 let callStartTime = null;

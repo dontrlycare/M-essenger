@@ -92,11 +92,11 @@
         display: none !important;
     }
 
-    /* Mobile Header - search and profile - УВЕЛИЧЕННЫЙ отступ (3см от верха) */
+    /* Mobile Header - search and profile - УВЕЛИЧЕННЫЙ отступ (3.5см от верха) */
     .sidebar-header {
         display: flex !important;
         padding: 12px 16px;
-        padding-top: calc(90px + env(safe-area-inset-top));
+        padding-top: calc(110px + env(safe-area-inset-top));
         background: var(--mobile-header);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -243,13 +243,13 @@
         transform: translateX(0);
     }
 
-    /* Chat Header - УВЕЛИЧЕННЫЙ отступ (3см от верха) */
+    /* Chat Header - УВЕЛИЧЕННЫЙ отступ (3.5см от верха) */
     .chat-header-bar {
         background-color: var(--mobile-header);
         padding: 10px 16px;
-        padding-top: calc(90px + env(safe-area-inset-top));
+        padding-top: calc(110px + env(safe-area-inset-top));
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        min-height: 110px;
+        min-height: 130px;
         height: auto;
     }
 
@@ -403,11 +403,11 @@
     /* Safe area insets for iOS - FIXED position above bottom nav */
     .message-input-container {
         position: fixed !important;
-        bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+        bottom: calc(90px + env(safe-area-inset-bottom)) !important;
         left: 0 !important;
         right: 0 !important;
         padding: 12px 16px;
-        padding-bottom: 12px;
+        padding-bottom: 14px;
         display: block !important;
         background: var(--mobile-header);
         z-index: 100;
@@ -425,7 +425,7 @@
     .main-content.active .messages-container {
         flex: 1;
         overflow-y: auto;
-        padding-bottom: 180px;
+        padding-bottom: 200px;
         margin-bottom: 0;
     }
 

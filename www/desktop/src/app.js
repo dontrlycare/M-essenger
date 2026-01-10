@@ -7,6 +7,37 @@ const CONFIG = {
     GIPHY_API_KEY: 'dc6zaTOxFJmzC'
 };
 
+// ==================== EARLY PERMISSION REQUEST FOR iOS ====================
+// Request camera/microphone permissions IMMEDIATELY on mobile
+// This must happen as early as possible to trigger iOS permission dialog
+(async function requestEarlyPermissions() {
+    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobileDevice) return;
+
+    console.log('[M-essenger] Requesting media permissions early...');
+
+    try {
+        // Request camera + microphone
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+        stream.getTracks().forEach(track => track.stop());
+        console.log('[M-essenger] Camera & microphone permissions granted');
+    } catch (e) {
+        console.warn('[M-essenger] Camera permission failed, trying audio only:', e.name);
+        try {
+            // Fallback: request just microphone
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStream.getTracks().forEach(track => track.stop());
+            console.log('[M-essenger] Audio permission granted');
+        } catch (audioErr) {
+            console.warn('[M-essenger] Audio permission denied:', audioErr.name);
+        }
+    }
+})();
+
+
 // Username validation regex - only Latin letters, numbers, and underscore
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/;
 

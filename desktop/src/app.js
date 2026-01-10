@@ -844,6 +844,36 @@ function saveSettings() {
 }
 
 // ==================== APP ====================
+// Request camera/microphone permissions early on mobile
+async function requestMediaPermissions() {
+    // Only request on mobile devices
+    if (!isMobile) return;
+
+    try {
+        console.log('Requesting media permissions...');
+        // Request both camera and microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        });
+        // Immediately stop the stream - we just needed to trigger the permission prompt
+        stream.getTracks().forEach(track => track.stop());
+        console.log('Media permissions granted');
+    } catch (error) {
+        console.warn('Media permission request:', error.name);
+        // If video fails, try audio only
+        if (error.name === 'NotFoundError' || error.name === 'NotAllowedError') {
+            try {
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioStream.getTracks().forEach(track => track.stop());
+                console.log('Audio permission granted');
+            } catch (audioError) {
+                console.warn('Audio permission denied:', audioError.name);
+            }
+        }
+    }
+}
+
 function showApp() {
     elements.loginScreen.classList.add('hidden');
     elements.appScreen.classList.remove('hidden');
@@ -851,7 +881,11 @@ function showApp() {
     connectWebSocket();
     loadConversations();
     loadTrendingGifs();
+
+    // Request media permissions early on mobile for calls
+    requestMediaPermissions();
 }
+
 
 // ==================== WEBSOCKET ====================
 function connectWebSocket() {
